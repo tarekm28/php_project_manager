@@ -22,6 +22,7 @@ function require_admin() {
         http_response_code(403);
         echo '<h1>No access</h1>';
         echo '<p>You are logged in but not an admin.</p>';
+        echo '<p><a href="logout.php">Logout</a></p>';
         exit;
     }
 }
