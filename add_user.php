@@ -14,6 +14,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $conn->close();
 
 
-    header("Location: admin/admin_interface.php");
+    header("Location: admin/admin_interface.php?page=user_management");
     exit();
 }

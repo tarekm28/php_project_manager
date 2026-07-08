@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->close();
     $conn->close();
 
-    header("Location: admin/admin_interface.php");
+    header("Location: admin/admin_interface.php?page=task_management");
     exit();
 }
 ?>

@@ -1,31 +1,67 @@
 <section id="user-management">
-            <h2>User Management</h2>
-            <div id="user-list">
-                <div class="container">
+    <h2>User Management</h2>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+        Add User
+    </button>
+
+    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addUserModalLabel">Add User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
                     <form action="../add_user.php" method="POST">
-                        <input type="text" name="username" placeholder="Enter username" required>
-                        <input type="password" name="password" placeholder="Enter password" required>
-                        <label for="role">Role:</label>
-                        <select name="role" id="role" required>
-                            <option value="admin">Admin</option>
-                            <option value="developers">Developer</option>
-                            <option value="hr">HR</option>
-                            <option value="accounting">Accounting</option>
-                            <option value="user">User</option>
-                        </select>
-                        <button type="submit">Add User</button>
+                        <div class="mb-3">
+                            <input type="text" name="username" class="form-control" placeholder="Enter username" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" name="password" class="form-control" placeholder="Enter password" required>
+                        </div>
+                        <div class="mb-3">
+                            <select name="role" class="form-select" required>
+                                <option value="admin">Admin</option>
+                                <option value="developers">Developer</option>
+                                <option value="hr">HR</option>
+                                <option value="accounting">Accounting</option>
+                                <option value="user">User</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success">Create User</button>
                     </form>
-
-                <?php
-                        $conn = new mysqli("localhost", "root", "", "new_proj");
-                        $result = $conn->query("SELECT * FROM users ORDER BY id DESC"); 
-
-                        while ($row = $result->fetch_assoc()) {
-                            echo "<li>" . $row['username'] . " - " . $row['role'] . 
-                            " <a href='../delete_user.php?id=" . $row['id'] . "'>Delete</a></li>";
-                        }
-
-                        $conn->close();
-                ?>
+                </div>
             </div>
-        </section>
+        </div>
+    </div>
+    <div id="user-list">
+        <table id="userManagementTable" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php
+                $conn = new mysqli("localhost", "root", "", "new_proj");
+                $result = $conn->query("SELECT * FROM users ORDER BY id DESC");
+
+                if ($result) {
+                    while ($row = $result->fetch_assoc()) {
+                        echo '<tr>';
+                        echo '<td>' . htmlspecialchars($row['username']) . '</td>';
+                        echo '<td>' . htmlspecialchars($row['role']) . '</td>';
+                        echo '<td><a href="../delete_user.php?id=' . (int) $row['id'] . '" class="btn btn-sm btn-danger">Delete</a></td>';
+                        echo '</tr>';
+                    }
+                }
+
+                $conn->close();
+                ?>
+            </tbody>
+        </table>
+    </div>
+
+</section>
