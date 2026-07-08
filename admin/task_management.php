@@ -45,29 +45,16 @@
             </thead>
             <tbody>
                 <?php
-                $conn = new mysqli("localhost", "root", "", "new_proj");
-                $result = $conn->query("SELECT * FROM tasks ORDER BY created_at DESC");
-
-                if ($result) {
-                    while ($row = $result->fetch_assoc()) {
-                        if (isset($row['employee_responsible']) && !empty($row['employee_responsible'])) {
-                            $employeeResponsible = $row['employee_responsible'];
-                        } else {
-                            $employeeResponsible = 'Unassigned';
-                        }
-
-                        echo '<tr>';
-                        echo '<td>' . htmlspecialchars($row['task']) . '</td>';
-                        echo '<td>' . htmlspecialchars($employeeResponsible) . ' - ' . htmlspecialchars($row['assigned_to']) . '</td>';
-                        echo '<td>' . htmlspecialchars($row['status']) . '</td>';
-                        echo '<td>' . htmlspecialchars($row['created_at']) . '</td>';
-                        echo '<td>' . htmlspecialchars($row['updated_at']) . '</td>';
-                        echo '<td><a href="../delete_tasks.php?id=' . (int) $row['id'] . '" class="btn btn-sm btn-danger">Delete</a></td>';
-                        echo '</tr>';
-                    }
+                foreach ($tasks as $task) {
+                    echo '<tr>';
+                    echo '<td>' . htmlspecialchars($task['task']) . '</td>';
+                    echo '<td>' . htmlspecialchars($task['role']) . '</td>';
+                    echo '<td>' . htmlspecialchars($task['status']) . '</td>';
+                    echo '<td>' . htmlspecialchars($task['created_at']) . '</td>';
+                    echo '<td>' . htmlspecialchars($task['updated_at']) . '</td>';
+                    echo '<td><a href="../delete_tasks.php?id=' . (int) $task['id'] . '" class="btn btn-sm btn-danger">Delete</a></td>';
+                    echo '</tr>';
                 }
-
-                $conn->close();
                 ?>
             </tbody>
         </table>
