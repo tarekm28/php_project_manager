@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../core/auth.php';
 require_once __DIR__ . '/../core/Controller.php';
 require_once __DIR__ . '/../model/Task.php';
+require_once __DIR__ . '/../model/User.php';
 
 class EmployeeController extends Controller
 {
@@ -16,11 +17,6 @@ class EmployeeController extends Controller
     public function index(): void
     {
         $page = $_GET['page'] ?? 'project_overview';
-        $this->view('employee/employee_interface', $this->getPageData($page));
-    }
-
-    public function getPageData(string $page): array
-    {
         $allowedPages = ['project_overview', 'team_tasks', 'current_tasks'];
 
         if (!in_array($page, $allowedPages, true)) {
@@ -32,15 +28,13 @@ class EmployeeController extends Controller
         if ($page === 'project_overview') {
             $data['tasks'] = $this->task->getAll();
         }
-
         if ($page === 'team_tasks') {
             $data['tasks'] = $this->task->getByRole(Auth::user()['role'] ?? '');
         }
-
         if ($page === 'current_tasks') {
-            $data['tasks'] = $this->task->getByEmployee(Auth::user()['username'] ?? '');
+            $data['currentTasks'] = $this->task->getByEmployee(Auth::user()['username'] ?? '');
         }
 
-        return $data;
+        $this->view('employee/employee_interface', $data);
     }
 }

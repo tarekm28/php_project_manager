@@ -46,11 +46,11 @@ class TaskController extends Controller
     }
 
 
-    public function take(): void
+    public function take(int $taskId, int $userId): void
     {
         $this->task->take(
-            (int)$_POST['task_id'],
-            $_SESSION['user_id']
+            $taskId,
+            $userId
         );
 
         header('Location: /tasks');
@@ -58,11 +58,11 @@ class TaskController extends Controller
     }
 
 
-    public function complete(): void
+    public function complete(int $taskId, int $userId): void
     {
         $this->task->complete(
-            (int)$_POST['task_id'],
-            $_SESSION['user_id']
+            $taskId,
+            $userId
         );
 
         header('Location: /tasks');

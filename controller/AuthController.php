@@ -11,10 +11,6 @@ class AuthController extends Controller
     {
         $username = $_POST['username'] ?? '';
         $password = $_POST['password'] ?? '';
-
-        // verify credentials
-        // set session
-
         Response::redirect('/dashboard');
     }
 
