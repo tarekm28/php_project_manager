@@ -56,7 +56,7 @@
                             </form>
                           </td>';
                     echo '</tr>';
-                }
+                }?>
             </tbody>
         </table>
     </div>

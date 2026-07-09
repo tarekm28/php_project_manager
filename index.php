@@ -1,22 +1,18 @@
 <?php
-require_once 'auth.php';
-require_login();
-?>
+require_once __DIR__ . '/core/Session.php';
+require_once __DIR__ . '/core/auth.php';
+require_once __DIR__ . '/controller/adminController.php';
+require_once __DIR__ . '/controller/employee_controller.php';
 
-<!DOCTYPE html>
-<html lang="en">
-    <div class="container">
-        <nav>
-            <ul>
-                <?php if ($_SESSION['role'] === 'admin'): 
-                    header("Location: admin/admin_interface.php");
-                elseif ($_SESSION['role'] !== 'admin'): 
-                    header("Location: employee/employee_interface.php");
-                endif; ?>
-            </ul>
-        </nav>
-        <form method="POST" action="logout.php">
-            <button type="submit">Logout</button>
-        </form>
-    </div>
-</html>
+Session::start();
+Auth::requireLogin();
+
+if (Auth::isAdmin()) {
+    $controller = new adminController();
+    $controller->index();
+    exit;
+}
+
+$controller = new EmployeeController();
+$controller->index();
+exit;

@@ -12,30 +12,16 @@
             </tr>
         </thead>
         <tbody>
-            <?php
-            $conn = new mysqli("localhost", "root", "", "new_proj");
-            $result = $conn->query("SELECT * FROM tasks ORDER BY created_at DESC");
-
-            if ($result) {
-                while ($row = $result->fetch_assoc()) {
-                    if (isset($row['employee_responsible']) && !empty($row['employee_responsible'])) {
-                        $employeeResponsible = $row['employee_responsible'];
-                    } else {
-                        $employeeResponsible = 'Unassigned';
-                    }
-
-                    echo '<tr>';
-                    echo '<td>' . htmlspecialchars($row['task']) . '</td>';
-                    echo '<td>' . htmlspecialchars($employeeResponsible) . ' - ' . htmlspecialchars($row['assigned_to']) . '</td>';
-                    echo '<td>' . htmlspecialchars($row['status']) . '</td>';
-                    echo '<td>' . htmlspecialchars($row['created_at']) . '</td>';
-                    echo '<td>' . htmlspecialchars($row['updated_at']) . '</td>';
-                    echo '</tr>';
-                }
-            }
-
-            $conn->close();
-            ?>
+            <?php foreach (($tasks ?? []) as $row): ?>
+                <?php $employeeResponsible = !empty($row['employee_responsible']) ? $row['employee_responsible'] : 'Unassigned'; ?>
+                <tr>
+                    <td><?= htmlspecialchars($row['task'] ?? '') ?></td>
+                    <td><?= htmlspecialchars($employeeResponsible . ' - ' . ($row['assigned_to'] ?? '')) ?></td>
+                    <td><?= htmlspecialchars($row['status'] ?? '') ?></td>
+                    <td><?= htmlspecialchars($row['created_at'] ?? '') ?></td>
+                    <td><?= htmlspecialchars($row['updated_at'] ?? '') ?></td>
+                </tr>
+            <?php endforeach; ?>
         </tbody>
     </table>
 </section>

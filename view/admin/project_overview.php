@@ -12,17 +12,15 @@
             </tr>
         </thead>
         <tbody>
-            <?php
-            foreach ($tasks as $task) {
-                echo '<tr>';
-                echo '<td>' . htmlspecialchars($task['task']) . '</td>';
-                echo '<td>' . htmlspecialchars($task['employee_responsible']) . ' - ' . htmlspecialchars($task['role']) . '</td>';
-                echo '<td>' . htmlspecialchars($task['status']) . '</td>';
-                echo '<td>' . htmlspecialchars($task['created_at']) . '</td>';
-                echo '<td>' . htmlspecialchars($task['updated_at']) . '</td>';
-                echo '</tr>';
-            }
-            ?>
+            <?php foreach (($tasks ?? []) as $task): ?>
+                <tr>
+                    <td><?= htmlspecialchars($task['task'] ?? '') ?></td>
+                    <td><?= htmlspecialchars($task['employee_responsible'] ?? $task['assigned_to'] ?? 'Unassigned') ?></td>
+                    <td><?= htmlspecialchars($task['status'] ?? 'Pending') ?></td>
+                    <td><?= htmlspecialchars($task['created_at'] ?? '') ?></td>
+                    <td><?= htmlspecialchars($task['updated_at'] ?? '') ?></td>
+                </tr>
+            <?php endforeach; ?>
         </tbody>
     </table>
 </section>

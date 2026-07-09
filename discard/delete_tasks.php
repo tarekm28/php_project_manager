@@ -8,7 +8,7 @@ if (isset($_GET['id'])) {
     $stmt->bind_param("i", $id);
     $stmt->execute();
 
-    $stmt->close();
+     ;
     $conn->close();
 
     header("Location: admin/admin_interface.php?page=task_management");

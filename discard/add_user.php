@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->bind_param("sss", $username, $password, $role);
     $stmt->execute();
 
-    $stmt->close();
+     ;
     $conn->close();
 
 

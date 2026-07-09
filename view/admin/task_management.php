@@ -44,18 +44,16 @@
                 </tr>
             </thead>
             <tbody>
-                <?php
-                foreach ($tasks as $task) {
-                    echo '<tr>';
-                    echo '<td>' . htmlspecialchars($task['task']) . '</td>';
-                    echo '<td>' . htmlspecialchars($task['role']) . '</td>';
-                    echo '<td>' . htmlspecialchars($task['status']) . '</td>';
-                    echo '<td>' . htmlspecialchars($task['created_at']) . '</td>';
-                    echo '<td>' . htmlspecialchars($task['updated_at']) . '</td>';
-                    echo '<td><a href="../delete_tasks.php?id=' . (int) $task['id'] . '" class="btn btn-sm btn-danger">Delete</a></td>';
-                    echo '</tr>';
-                }
-                ?>
+                <?php foreach (($tasks ?? []) as $task): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($task['task'] ?? '') ?></td>
+                        <td><?= htmlspecialchars($task['assigned_to'] ?? $task['employee_responsible'] ?? 'Unassigned') ?></td>
+                        <td><?= htmlspecialchars($task['status'] ?? 'Pending') ?></td>
+                        <td><?= htmlspecialchars($task['created_at'] ?? '') ?></td>
+                        <td><?= htmlspecialchars($task['updated_at'] ?? '') ?></td>
+                        <td><a href="/proj1/delete_tasks.php?id=<?= (int) ($task['id'] ?? 0) ?>" class="btn btn-sm btn-danger">Delete</a></td>
+                    </tr>
+                <?php endforeach; ?>
             </tbody>
         </table>
     </div>

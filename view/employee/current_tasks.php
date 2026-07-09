@@ -10,28 +10,18 @@
             </tr>
         </thead>
         <tbody>
-            <?php
-            $conn = new mysqli("localhost", "root", "", "new_proj");
-            $user = $_SESSION['username'];
-            $result = $conn->query("SELECT * FROM tasks WHERE employee_responsible = '$user' AND status != 'Completed' ORDER BY created_at DESC");
-
-            if ($result) {
-                while ($row = $result->fetch_assoc()) {
-                    echo "<tr>";
-                    echo "<td>" . htmlspecialchars($row['task']) . "</td>";
-                    echo "<td>" . htmlspecialchars($row['status']) . "</td>";
-                    echo "<td>
-                            <form method='POST' style='display:inline;'>
-                                <input type='hidden' name='task_id' value='" . (int)$row['id'] . "'>
-                                <button type='submit' name='complete_task' class='btn btn-sm btn-success'>Mark as Completed</button>
-                            </form>
-                          </td>";
-                    echo "</tr>";
-                }
-            }
-
-            $conn->close();
-            ?>
+            <?php foreach (($tasks ?? []) as $row): ?>
+                <tr>
+                    <td><?= htmlspecialchars($row['task'] ?? '') ?></td>
+                    <td><?= htmlspecialchars($row['status'] ?? '') ?></td>
+                    <td>
+                        <form method='POST' style='display:inline;'>
+                            <input type='hidden' name='task_id' value='<?= (int) ($row['id'] ?? 0) ?>'>
+                            <button type='submit' name='complete_task' class='btn btn-sm btn-success'>Mark as Completed</button>
+                        </form>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
         </tbody>
     </table>
 </section>

@@ -8,8 +8,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $conn->prepare("INSERT INTO tasks (task, assigned_to) VALUES (?, ?)");
     $stmt->bind_param("ss", $task, $role);
     $stmt->execute();
-
-    $stmt->close();
     $conn->close();
 
     header("Location: admin/admin_interface.php?page=task_management");

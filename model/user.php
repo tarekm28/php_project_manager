@@ -1,25 +1,25 @@
 <?php
-$db = Database::getConnection();
+require_once __DIR__ . '/../core/database.php';
+
+class User extends Model
+{
+
+    public function getAll() : array{
+        $stmt = $this->db->query("SELECT * FROM users ORDER BY created_at DESC");
+        return $stmt->fetchAll();
+    }
 
 
-function getAll() {
-    $stmt = $db->query("SELECT * FROM tasks ORDER BY created_at DESC");
-    return $stmt->fetchAll();
+    public function createUser(string $username, string $password, string $role): void {
+        $stmt = $this->db->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
+        $stmt->execute([$username, $password, $role]);
+    }
+
+
+    public function deleteUser(int $userId): void {
+        $stmt = $this->db->prepare("DELETE FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+    }
+
+
 }
-
-
-function createUser($username, $password, $role) {
-    $stmt = $db->prepare("INSERT INTO users (username, password, role) VALUES (?, ?, ?)");
-    $stmt->execute([$username, password_hash($password, PASSWORD_DEFAULT), $role]);
-    $stmt->close();
-}
-
-
-function deleteUser($userId) {
-    $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
-    $stmt->execute([$userId]);
-    $stmt->close();
-}
-
-
-?>

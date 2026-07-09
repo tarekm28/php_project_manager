@@ -1,13 +1,7 @@
 <?php
-require_once __DIR__ . '/../auth.php';
-require_admin();
-
-$page = $_GET['page'] ?? 'project_overview';
-$allowedPages = ['project_overview', 'task_management', 'user_management'];
-
-if (!in_array($page, $allowedPages, true)) {
-    $page = 'project_overview';
-}
+$page = $page ?? ($_GET['page'] ?? 'project_overview');
+$tasks = $tasks ?? [];
+$users = $users ?? [];
 ?>
 
 <!DOCTYPE html>
@@ -24,17 +18,17 @@ if (!in_array($page, $allowedPages, true)) {
         <div class="container-fluid p-0">
             <ul class="navbar-nav d-flex flex-row gap-3">
                 <li class="nav-item">
-                    <a class="nav-link<?= $page === 'project_overview' ? ' active' : '' ?>" href="admin_interface.php?page=project_overview"<?= $page === 'project_overview' ? ' aria-current="page"' : '' ?>>
+                    <a class="nav-link<?= $page === 'project_overview' ? ' active' : '' ?>" href="/proj1/index.php?page=project_overview"<?= $page === 'project_overview' ? ' aria-current="page"' : '' ?>>
                         Project Overview
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link<?= $page === 'task_management' ? ' active' : '' ?>" href="admin_interface.php?page=task_management"<?= $page === 'task_management' ? ' aria-current="page"' : '' ?>>
+                    <a class="nav-link<?= $page === 'task_management' ? ' active' : '' ?>" href="/proj1/index.php?page=task_management"<?= $page === 'task_management' ? ' aria-current="page"' : '' ?>>
                         Task Management
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link<?= $page === 'user_management' ? ' active' : '' ?>" href="admin_interface.php?page=user_management"<?= $page === 'user_management' ? ' aria-current="page"' : '' ?>>
+                    <a class="nav-link<?= $page === 'user_management' ? ' active' : '' ?>" href="/proj1/index.php?page=user_management"<?= $page === 'user_management' ? ' aria-current="page"' : '' ?>>
                         User Management
                     </a>
                 </li>
@@ -45,7 +39,7 @@ if (!in_array($page, $allowedPages, true)) {
     <div class="container py-4">
         <header class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="h3 mb-0">Project Manager Dashboard</h1>
-            <form method="POST" action="../logout.php">
+            <form method="POST" action="/proj1/logout.php">
                 <button type="submit" class="btn btn-outline-secondary">Logout</button>
             </form>
         </header>
@@ -53,14 +47,14 @@ if (!in_array($page, $allowedPages, true)) {
         <?php
         switch ($page) {
             case 'task_management':
-                include 'task_management.php';
+                require __DIR__ . '/task_management.php';
                 break;
             case 'user_management':
-                include 'user_management.php';
+                require __DIR__ . '/user_management.php';
                 break;
             case 'project_overview':
             default:
-                include 'project_overview.php';
+                require __DIR__ . '/project_overview.php';
                 break;
         }
         ?>

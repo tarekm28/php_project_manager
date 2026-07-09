@@ -1,7 +1,11 @@
 <?php
-require_once 'auth.php';
+require_once __DIR__ . '/core/auth.php';
+require_once __DIR__ . '/core/Session.php';
+require_once __DIR__ . '/core/database.php';
 
-if (is_logged_in()) {
+Session::start();
+
+if (Auth::check()) {
     header("Location: index.php");
     exit;
 }
@@ -12,23 +16,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username']);
     $password = $_POST['password'];
 
-    $conn = db_connect();
-    $stmt = $conn->prepare("SELECT id, username, password, role FROM users WHERE username = ?");
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $user = $result->fetch_assoc();
+    $db = Database::getConnection();
+    $stmt = $db->prepare("SELECT id, username, password, role FROM users WHERE username = ?");
+    $stmt->execute([$username]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($user && $password === $user['password']) {
-    login_user($user);
-    header("Location: index.php");
-    exit;
-    } else {
-        $error = 'Invalid username or password';
+        Auth::login($user);
+        header("Location: index.php");
+        exit;
     }
 
-    $stmt->close();
-    $conn->close();
+    $error = 'Invalid username or password';
 }
 ?>
 

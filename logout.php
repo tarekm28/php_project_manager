@@ -1,8 +1,9 @@
 <?php
-require_once 'auth.php';
+require_once __DIR__ . '/core/auth.php';
+require_once __DIR__ . '/core/Session.php';
 
-$_SESSION = [];
-session_unset();
-session_destroy();
+Session::start();
+Auth::logout();
 
-redirect_to_login();
+header('Location: login.php');
+exit;
