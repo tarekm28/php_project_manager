@@ -28,6 +28,14 @@ class Task extends Model
         return $stmt->fetchAll();
     }
 
+    public function findById(int $id): ?array
+    {
+        $stmt = $this->db->prepare("SELECT * FROM tasks WHERE id = ?");
+        $stmt->execute([$id]);
+        $result = $stmt->fetch();
+        return $result ?: null;
+    }
+
     public function take(int $taskId, string $username): void
     {
          
