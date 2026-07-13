@@ -1,79 +1,104 @@
 <?php
-
-require_once __DIR__ . '/../core/auth.php';
-require_once __DIR__ . '/../core/Response.php';
+// app/controller/TaskController.php
 
 class TaskController extends Controller
 {
     private Task $task;
 
-
     public function __construct()
     {
-        Auth::requireLogin();
-
         $this->task = $this->model('Task');
     }
 
-
     public function index(): void
     {
-        Auth::requireAdmin();
+        // AdminMiddleware already verified — just do the work
         $tasks = $this->task->getAll();
-
-        $this->view('admin/task_management', [
-            'tasks' => $tasks
-        ]);
+        Response::json($tasks);
     }
-
 
     public function create(): void
     {
-        Auth::requireAdmin();
-        $this->task->create(
-            $_POST['task'],
-            $_POST['role']
-        );
+        $data = $this->getInput();
+        $task = $data['task'] ?? '';
+        $role = $data['role'] ?? '';
 
-        Response::redirect('index.php?route=/&page=task_management');
+        if (!$task || !$role) {
+            Response::json(['error' => 'Task and role required'], 400);
+            return;
+        }
+
+        $this->task->create($task, $role);
+        Response::json(['success' => true, 'message' => 'Task created'], 201);
     }
-
 
     public function delete(): void
     {
-        Auth::requireAdmin();
-        $this->task->delete(
-            (int)$_POST['task_id']
-        );
+        $data = $this->getInput();
+        $taskId = (int)($data['task_id'] ?? 0);
 
-        Response::redirect('index.php?route=/&page=task_management');
+        if (!$taskId) {
+            Response::json(['error' => 'Task ID required'], 400);
+            return;
+        }
+
+        $this->task->delete($taskId);
+        Response::json(['success' => true]);
     }
-
 
     public function take(): void
     {
-        $taskId = (int)$_POST['task_id'];
+        $data = $this->getInput();
+        $taskId = (int)($data['task_id'] ?? 0);
         $username = Auth::user()['username'] ?? '';
 
-        $this->task->take(
-            $taskId,
-            $username
-        );
+        if (!$taskId) {
+            Response::json(['error' => 'Task ID required'], 400);
+            return;
+        }
 
-        Response::redirect('index.php?route=/&page=team_tasks');
+        $this->task->take($taskId, $username);
+        Response::json(['success' => true]);
     }
-
 
     public function complete(): void
     {
-        $taskId = (int)$_POST['task_id'];
+        $data = $this->getInput();
+        $taskId = (int)($data['task_id'] ?? 0);
         $username = Auth::user()['username'] ?? '';
 
-        $this->task->complete(
-            $taskId,
-            $username
-        );
+        if (!$taskId) {
+            Response::json(['error' => 'Task ID required'], 400);
+            return;
+        }
 
-        Response::redirect('index.php?route=/&page=current_tasks');
+        $task = $this->task->findById($taskId);
+        if (!$task || ($task['employee_responsible'] ?? '') !== $username) {
+            Response::json(['error' => 'Not authorized'], 403);
+            return;
+        }
+
+        $this->task->complete($taskId, $username);
+        Response::json(['success' => true, 'task_id' => $taskId, 'status' => 'completed']);
+    }
+
+    public function myTasks(): void
+    {
+        $username = Auth::user()['username'] ?? '';
+        $tasks = $this->task->getByEmployee($username);
+        Response::json($tasks);
+    }
+
+    public function teamTasks(): void
+    {
+        $role = Auth::user()['role'] ?? '';
+        $tasks = $this->task->getByRole($role);
+        Response::json($tasks);
+    }
+
+    public function allTasks(): void
+    {
+        $tasks = $this->task->getAll();
+        Response::json($tasks);
     }
 }

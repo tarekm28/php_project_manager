@@ -1,7 +1,5 @@
 <?php
-
-require_once __DIR__ . '/../core/auth.php';
-require_once __DIR__ . '/../core/Response.php';
+// app/controller/UserController.php
 
 class UserController extends Controller
 {
@@ -9,40 +7,42 @@ class UserController extends Controller
 
     public function __construct()
     {
-        Auth::requireAdmin();
-
         $this->user = $this->model('User');
     }
-
 
     public function index(): void
     {
         $users = $this->user->getAll();
-
-        $this->view('admin/user_management', [
-            'users' => $users
-        ]);
+        Response::json($users);
     }
-
 
     public function create(): void
     {
-        $this->user->createUser(
-            $_POST['username'],
-            $_POST['password'],
-            $_POST['role']
-        );
+        $data = $this->getInput();
+        $username = $data['username'] ?? '';
+        $password = $data['password'] ?? '';
+        $role = $data['role'] ?? '';
 
-        Response::redirect('index.php?route=/&page=user_management');
+        if (!$username || !$password || !$role) {
+            Response::json(['error' => 'All fields required'], 400);
+            return;
+        }
+
+        $this->user->createUser($username, $password, $role);
+        Response::json(['success' => true], 201);
     }
-
 
     public function delete(): void
     {
-        $this->user->deleteUser(
-            (int)$_POST['user_id']
-        );
+        $data = $this->getInput();
+        $userId = (int)($data['user_id'] ?? 0);
 
-        Response::redirect('index.php?route=/&page=user_management');
+        if (!$userId) {
+            Response::json(['error' => 'User ID required'], 400);
+            return;
+        }
+
+        $this->user->deleteUser($userId);
+        Response::json(['success' => true]);
     }
 }

@@ -1,25 +1,23 @@
 <?php
-
-require_once __DIR__ . '/../core/auth.php';
-require_once __DIR__ . '/../core/database.php';
+// app/controller/AuthController.php
 
 class AuthController extends Controller
 {
-    public function login(): void
+    public function me(): void
     {
-        if (Auth::check()) {
-            $scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '\\/');
-            $redirectUrl = ($scriptDir ?: '') . '/index.php?route=/';
-            Response::redirect($redirectUrl);
+        $user = Auth::user();
+        if (!$user) {
+            Response::json(['error' => 'Not authenticated'], 401);
             return;
         }
-        $this->view('auth/login');
+        Response::json($user);
     }
 
     public function authenticate(): void
     {
-        $username = trim($_POST['username'] ?? '');
-        $password = $_POST['password'] ?? '';
+        $data = $this->getInput();
+        $username = trim($data['username'] ?? '');
+        $password = $data['password'] ?? '';
 
         $db = Database::getConnection();
         $stmt = $db->prepare("SELECT id, username, password, role FROM users WHERE username = ?");
@@ -28,20 +26,23 @@ class AuthController extends Controller
 
         if ($user && $password === $user['password']) {
             Auth::login($user);
-            $scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '\\/');
-            $redirectUrl = ($scriptDir ?: '') . '/index.php?route=/';
-            Response::redirect($redirectUrl);
+            Response::json([
+                'success' => true,
+                'user' => [
+                    'id' => $user['id'],
+                    'username' => $user['username'],
+                    'role' => $user['role']
+                ]
+            ]);
             return;
         }
 
-        $this->view('auth/login', ['error' => 'Invalid username or password']);
+        Response::json(['error' => 'Invalid credentials'], 401);
     }
 
     public function logout(): void
     {
         Auth::logout();
-        $scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '\\/');
-        $redirectUrl = ($scriptDir ?: '') . '/index.php?route=/login';
-        Response::redirect($redirectUrl);
+        Response::json(['success' => true]);
     }
 }

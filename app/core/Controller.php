@@ -1,30 +1,23 @@
 <?php
+namespace App\Core;
 
 class Controller
 {
     protected function model(string $model)
     {
-    $modelFile = __DIR__ . '/../model/' . $model . '.php';
-
-    if (!file_exists($modelFile)) {
-        throw new Exception("Model not found: {$model}");
-    }
-
-    require_once $modelFile;
-
-    return new $model();
-    }
-
-    protected function view($view, array $data = []): void
-    {
-        extract($data);
-
-        $viewFile = __DIR__ . '/../../view/' . $view . '.php';
-
-        if (!file_exists($viewFile)) {
-            throw new Exception("View not found: {$view}");
+        $modelClass = "App\\Models\\{$model}";
+        if (!class_exists($modelClass)) {
+            throw new \Exception("Model not found: {$model}");
         }
+        return new $modelClass();
+    }
 
-        require $viewFile;
+    protected function getInput(): array
+    {
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        if (str_contains($contentType, 'application/json')) {
+            return json_decode(file_get_contents('php://input'), true) ?? [];
+        }
+        return $_POST;
     }
 }

@@ -1,12 +1,12 @@
 <?php
+namespace App\Core;
 
 class AdminMiddleware
 {
     public static function handle(): void
     {
         if (!Auth::isAdmin()) {
-            http_response_code(403);
-            exit('Forbidden');
+            Response::json(['error' => 'Forbidden'], 403);
         }
     }
 }
