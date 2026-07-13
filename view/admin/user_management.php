@@ -12,7 +12,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="../add_user.php" method="POST">
+                    <form action="index.php?route=/admin/users/create" method="POST">
                         <div class="mb-3">
                             <input type="text" name="username" class="form-control" placeholder="Enter username" required>
                         </div>
@@ -45,21 +45,18 @@
             </thead>
             <tbody>
                 <?php
-                $conn = new mysqli("localhost", "root", "", "new_proj");
-                $result = $conn->query("SELECT * FROM users ORDER BY id DESC");
-
-                if ($result) {
-                    while ($row = $result->fetch_assoc()) {
-                        echo '<tr>';
-                        echo '<td>' . htmlspecialchars($row['username']) . '</td>';
-                        echo '<td>' . htmlspecialchars($row['role']) . '</td>';
-                        echo '<td><a href="../delete_user.php?id=' . (int) $row['id'] . '" class="btn btn-sm btn-danger">Delete</a></td>';
-                        echo '</tr>';
-                    }
-                }
-
-                $conn->close();
-                ?>
+                foreach ($users as $user) {
+                    echo '<tr>';
+                    echo '<td>' . htmlspecialchars($user['username']) . '</td>';
+                    echo '<td>' . htmlspecialchars($user['role']) . '</td>';
+                    echo '<td>
+                            <form action="index.php?route=/admin/users/delete" method="POST" style="display:inline;">
+                                <input type="hidden" name="user_id" value="' . (int)$user['id'] . '">
+                                <button type="submit" name="delete_user" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                          </td>';
+                    echo '</tr>';
+                }?>
             </tbody>
         </table>
     </div>

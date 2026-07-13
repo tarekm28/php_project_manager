@@ -13,7 +13,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="../add_tasks.php" method="POST">
+                    <form action="index.php?route=/admin/tasks/create" method="POST">
                         <div class="mb-3">
                             <input type="text" name="task" class="form-control" placeholder="Enter task" required>
                         </div>
@@ -44,31 +44,21 @@
                 </tr>
             </thead>
             <tbody>
-                <?php
-                $conn = new mysqli("localhost", "root", "", "new_proj");
-                $result = $conn->query("SELECT * FROM tasks ORDER BY created_at DESC");
-
-                if ($result) {
-                    while ($row = $result->fetch_assoc()) {
-                        if (isset($row['employee_responsible']) && !empty($row['employee_responsible'])) {
-                            $employeeResponsible = $row['employee_responsible'];
-                        } else {
-                            $employeeResponsible = 'Unassigned';
-                        }
-
-                        echo '<tr>';
-                        echo '<td>' . htmlspecialchars($row['task']) . '</td>';
-                        echo '<td>' . htmlspecialchars($employeeResponsible) . ' - ' . htmlspecialchars($row['assigned_to']) . '</td>';
-                        echo '<td>' . htmlspecialchars($row['status']) . '</td>';
-                        echo '<td>' . htmlspecialchars($row['created_at']) . '</td>';
-                        echo '<td>' . htmlspecialchars($row['updated_at']) . '</td>';
-                        echo '<td><a href="../delete_tasks.php?id=' . (int) $row['id'] . '" class="btn btn-sm btn-danger">Delete</a></td>';
-                        echo '</tr>';
-                    }
-                }
-
-                $conn->close();
-                ?>
+                <?php foreach (($tasks ?? []) as $task): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($task['task'] ?? '') ?></td>
+                        <td><?= htmlspecialchars($task['assigned_to'] ?? $task['employee_responsible'] ?? 'Unassigned') ?></td>
+                        <td><?= htmlspecialchars($task['status'] ?? 'Pending') ?></td>
+                        <td><?= htmlspecialchars($task['created_at'] ?? '') ?></td>
+                        <td><?= htmlspecialchars($task['updated_at'] ?? '') ?></td>
+                        <td>
+                            <form action="index.php?route=/admin/tasks/delete" method="POST" style="display:inline;">
+                                <input type="hidden" name="task_id" value="<?= (int) ($task['id'] ?? 0) ?>">
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
             </tbody>
         </table>
     </div>
