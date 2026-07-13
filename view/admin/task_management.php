@@ -13,7 +13,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="../add_tasks.php" method="POST">
+                    <form action="index.php?route=/admin/tasks/create" method="POST">
                         <div class="mb-3">
                             <input type="text" name="task" class="form-control" placeholder="Enter task" required>
                         </div>
@@ -51,7 +51,12 @@
                         <td><?= htmlspecialchars($task['status'] ?? 'Pending') ?></td>
                         <td><?= htmlspecialchars($task['created_at'] ?? '') ?></td>
                         <td><?= htmlspecialchars($task['updated_at'] ?? '') ?></td>
-                        <td><a href="/proj1/delete_tasks.php?id=<?= (int) ($task['id'] ?? 0) ?>" class="btn btn-sm btn-danger">Delete</a></td>
+                        <td>
+                            <form action="index.php?route=/admin/tasks/delete" method="POST" style="display:inline;">
+                                <input type="hidden" name="task_id" value="<?= (int) ($task['id'] ?? 0) ?>">
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
             </tbody>

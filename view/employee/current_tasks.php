@@ -15,7 +15,7 @@
                     <td><?= htmlspecialchars($row['task'] ?? '') ?></td>
                     <td><?= htmlspecialchars($row['status'] ?? '') ?></td>
                     <td>
-                        <form method='POST' style='display:inline;'>
+                        <form method='POST' action='index.php?route=/employee/tasks/complete' style='display:inline;'>
                             <input type='hidden' name='task_id' value='<?= (int) ($row['id'] ?? 0) ?>'>
                             <button type='submit' name='complete_task' class='btn btn-sm btn-success'>Mark as Completed</button>
                         </form>

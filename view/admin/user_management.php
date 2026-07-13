@@ -12,7 +12,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="../add_user.php" method="POST">
+                    <form action="index.php?route=/admin/users/create" method="POST">
                         <div class="mb-3">
                             <input type="text" name="username" class="form-control" placeholder="Enter username" required>
                         </div>
@@ -50,7 +50,7 @@
                     echo '<td>' . htmlspecialchars($user['username']) . '</td>';
                     echo '<td>' . htmlspecialchars($user['role']) . '</td>';
                     echo '<td>
-                            <form method="POST" style="display:inline;">
+                            <form action="index.php?route=/admin/users/delete" method="POST" style="display:inline;">
                                 <input type="hidden" name="user_id" value="' . (int)$user['id'] . '">
                                 <button type="submit" name="delete_user" class="btn btn-sm btn-danger">Delete</button>
                             </form>

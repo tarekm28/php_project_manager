@@ -17,7 +17,7 @@ $tasks = $tasks ?? [];
     <header>
         <h1>Employee Dashboard</h1>
         <div style="position:absolute; top:16px; right:16px;">
-            <form method="POST" action="/proj1/logout.php">
+            <form method="POST" action="index.php?route=/logout">
                 <button type="submit">Logout</button>
             </form>
         </div>
@@ -25,13 +25,13 @@ $tasks = $tasks ?? [];
     <nav class="navbar navbar-expand bg-body-tertiary px-3">
         <ul class="navbar-nav d-flex flex-row gap-3">
             <li class="nav-item">
-                <a class="nav-link<?= $page === 'project_overview' ? ' active' : '' ?>" href="/proj1/index.php?page=project_overview">Project Overview</a>
+                <a class="nav-link<?= $page === 'project_overview' ? ' active' : '' ?>" href="index.php?route=/&page=project_overview">Project Overview</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link<?= $page === 'team_tasks' ? ' active' : '' ?>" href="/proj1/index.php?page=team_tasks">Team Tasks</a>
+                <a class="nav-link<?= $page === 'team_tasks' ? ' active' : '' ?>" href="index.php?route=/&page=team_tasks">Team Tasks</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link<?= $page === 'current_tasks' ? ' active' : '' ?>" href="/proj1/index.php?page=current_tasks">Current Tasks</a>
+                <a class="nav-link<?= $page === 'current_tasks' ? ' active' : '' ?>" href="index.php?route=/&page=current_tasks">Current Tasks</a>
             </li>
         </ul>
     </nav>

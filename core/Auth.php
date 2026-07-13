@@ -45,7 +45,9 @@ class Auth
     public static function requireLogin(): void
     {
         if (!self::check()) {
-            Response::redirect('/login.php');
+            $scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '\\/');
+            $redirectUrl = ($scriptDir ?: '') . '/index.php?route=/login';
+            Response::redirect($redirectUrl);
         }
     }
 

@@ -18,17 +18,17 @@ $users = $users ?? [];
         <div class="container-fluid p-0">
             <ul class="navbar-nav d-flex flex-row gap-3">
                 <li class="nav-item">
-                    <a class="nav-link<?= $page === 'project_overview' ? ' active' : '' ?>" href="/proj1/index.php?page=project_overview"<?= $page === 'project_overview' ? ' aria-current="page"' : '' ?>>
+                    <a class="nav-link<?= $page === 'project_overview' ? ' active' : '' ?>" href="index.php?route=/&page=project_overview"<?= $page === 'project_overview' ? ' aria-current="page"' : '' ?>>
                         Project Overview
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link<?= $page === 'task_management' ? ' active' : '' ?>" href="/proj1/index.php?page=task_management"<?= $page === 'task_management' ? ' aria-current="page"' : '' ?>>
+                    <a class="nav-link<?= $page === 'task_management' ? ' active' : '' ?>" href="index.php?route=/&page=task_management"<?= $page === 'task_management' ? ' aria-current="page"' : '' ?>>
                         Task Management
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link<?= $page === 'user_management' ? ' active' : '' ?>" href="/proj1/index.php?page=user_management"<?= $page === 'user_management' ? ' aria-current="page"' : '' ?>>
+                    <a class="nav-link<?= $page === 'user_management' ? ' active' : '' ?>" href="index.php?route=/&page=user_management"<?= $page === 'user_management' ? ' aria-current="page"' : '' ?>>
                         User Management
                     </a>
                 </li>
@@ -39,7 +39,7 @@ $users = $users ?? [];
     <div class="container py-4">
         <header class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="h3 mb-0">Project Manager Dashboard</h1>
-            <form method="POST" action="/proj1/logout.php">
+            <form method="POST" action="index.php?route=/logout">
                 <button type="submit" class="btn btn-outline-secondary">Logout</button>
             </form>
         </header>

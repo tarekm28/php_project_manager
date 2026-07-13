@@ -32,7 +32,7 @@ class EmployeeController extends Controller
             $data['tasks'] = $this->task->getByRole(Auth::user()['role'] ?? '');
         }
         if ($page === 'current_tasks') {
-            $data['currentTasks'] = $this->task->getByEmployee(Auth::user()['username'] ?? '');
+            $data['tasks'] = $this->task->getByEmployee(Auth::user()['username'] ?? '');
         }
 
         $this->view('employee/employee_interface', $data);

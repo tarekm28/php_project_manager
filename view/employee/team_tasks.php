@@ -20,7 +20,7 @@
                     <td><?= htmlspecialchars($assigned) ?></td>
                     <td>
                         <?php if ($assigned === 'Unassigned'): ?>
-                            <form method='POST' style='display:inline;'>
+                            <form method='POST' action='index.php?route=/employee/tasks/take' style='display:inline;'>
                                 <input type='hidden' name='task_id' value='<?= (int) ($row['id'] ?? 0) ?>'>
                                 <button type='submit' name='take_task' class='btn btn-sm btn-primary'>Take Task</button>
                             </form>

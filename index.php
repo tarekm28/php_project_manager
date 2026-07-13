@@ -1,18 +1,31 @@
 <?php
 require_once __DIR__ . '/core/Session.php';
 require_once __DIR__ . '/core/auth.php';
-require_once __DIR__ . '/controller/adminController.php';
-require_once __DIR__ . '/controller/employee_controller.php';
+require_once __DIR__ . '/core/Router.php';
+require_once __DIR__ . '/core/Controller.php';
+require_once __DIR__ . '/core/Model.php';
 
 Session::start();
-Auth::requireLogin();
 
-if (Auth::isAdmin()) {
-    $controller = new adminController();
-    $controller->index();
-    exit;
-}
+$router = new Router();
 
-$controller = new EmployeeController();
-$controller->index();
-exit;
+// Authentication Routes
+$router->get('/login', 'AuthController@login');
+$router->post('/login', 'AuthController@authenticate');
+$router->get('/logout', 'AuthController@logout');
+$router->post('/logout', 'AuthController@logout');
+
+// Dashboard Home Route
+$router->get('/', 'DashboardController@index');
+
+// Admin Action Routes
+$router->post('/admin/tasks/create', 'TaskController@create');
+$router->post('/admin/tasks/delete', 'TaskController@delete');
+$router->post('/admin/users/create', 'UserController@create');
+$router->post('/admin/users/delete', 'UserController@delete');
+
+// Employee Action Routes
+$router->post('/employee/tasks/take', 'TaskController@take');
+$router->post('/employee/tasks/complete', 'TaskController@complete');
+
+$router->dispatch();

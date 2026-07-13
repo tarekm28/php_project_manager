@@ -1,12 +1,15 @@
 <?php
 
+require_once __DIR__ . '/../core/auth.php';
+require_once __DIR__ . '/../core/Response.php';
+
 class UserController extends Controller
 {
     private User $user;
 
     public function __construct()
     {
-        Auth::requireLogin();
+        Auth::requireAdmin();
 
         $this->user = $this->model('User');
     }
@@ -24,24 +27,22 @@ class UserController extends Controller
 
     public function create(): void
     {
-        $this->user->create(
+        $this->user->createUser(
             $_POST['username'],
             $_POST['password'],
             $_POST['role']
         );
 
-        header('Location: /users');
-        exit;
+        Response::redirect('index.php?route=/&page=user_management');
     }
 
 
     public function delete(): void
     {
-        $this->user->delete(
+        $this->user->deleteUser(
             (int)$_POST['user_id']
         );
 
-        header('Location: /users');
-        exit;
+        Response::redirect('index.php?route=/&page=user_management');
     }
 }
