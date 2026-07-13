@@ -1,9 +1,9 @@
 <?php
-require_once __DIR__ . '/core/Session.php';
-require_once __DIR__ . '/core/auth.php';
-require_once __DIR__ . '/core/Router.php';
-require_once __DIR__ . '/core/Controller.php';
-require_once __DIR__ . '/core/Model.php';
+require_once __DIR__ . '/../app/core/Session.php';
+require_once __DIR__ . '/../app/core/auth.php';
+require_once __DIR__ . '/../app/core/Router.php';
+require_once __DIR__ . '/../app/core/Controller.php';
+require_once __DIR__ . '/../app/core/Model.php';
 
 Session::start();
 

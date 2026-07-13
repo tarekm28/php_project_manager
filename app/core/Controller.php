@@ -19,7 +19,7 @@ class Controller
     {
         extract($data);
 
-        $viewFile = __DIR__ . '/../view/' . $view . '.php';
+        $viewFile = __DIR__ . '/../../view/' . $view . '.php';
 
         if (!file_exists($viewFile)) {
             throw new Exception("View not found: {$view}");
