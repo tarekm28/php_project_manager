@@ -1,5 +1,18 @@
 <?php
 require_once __DIR__ . '/../core/database.php';
+require_once __DIR__ . '/../core/Model.php';
+
+use OpenApi\Attributes as OA;
+#[OA\Schema(
+    schema: "User",
+    type: "object",
+    properties: [
+        new OA\Property(property: "id", type: "integer", description: "Unique identifier for the user"),
+        new OA\Property(property: "username", type: "string", description: "Username of the user"),
+        new OA\Property(property: "role", type: "string", description: "Role of the user (Admin, Manager, Employee)"),
+        new OA\Property(property: "created_at", type: "string", format: "date-time", description: "Timestamp when the user was created")
+    ]
+)]
 
 class User extends Model
 {
