@@ -1,5 +1,4 @@
 <?php
-// app/controller/TaskController.php
 
 class TaskController extends Controller
 {
@@ -12,7 +11,6 @@ class TaskController extends Controller
 
     public function index(): void
     {
-        // AdminMiddleware already verified — just do the work
         $tasks = $this->task->getAll();
         Response::json($tasks);
     }

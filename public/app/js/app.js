@@ -1,0 +1,462 @@
+let currentPage = 'project_overview';
+
+document.addEventListener('DOMContentLoaded', async function() {
+    const user = await checkAuth();
+    if (!user) return;
+
+    renderApp();
+});
+
+function renderApp() {
+    const app = document.getElementById('app');
+    const user = getUser();
+
+    if (isAdmin()) {
+        app.innerHTML = renderAdminLayout();
+    } else {
+        app.innerHTML = renderEmployeeLayout();
+    }
+
+    loadPageContent(currentPage);
+}
+
+
+function renderAdminLayout() {
+    const isActive = (page) => currentPage === page ? ' active' : '';
+    const isCurrent = (page) => currentPage === page ? ' aria-current="page"' : '';
+
+    return `
+    <nav class="navbar navbar-expand bg-body-tertiary px-3">
+        <div class="container-fluid p-0">
+            <ul class="navbar-nav d-flex flex-row gap-3">
+                <li class="nav-item">
+                    <a class="nav-link${isActive('project_overview')}" href="#" onclick="navigateTo('project_overview'); return false;"${isCurrent('project_overview')}>
+                        Project Overview
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link${isActive('task_management')}" href="#" onclick="navigateTo('task_management'); return false;"${isCurrent('task_management')}>
+                        Task Management
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link${isActive('user_management')}" href="#" onclick="navigateTo('user_management'); return false;"${isCurrent('user_management')}>
+                        User Management
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <header class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">Project Manager Dashboard</h1>
+            <button onclick="logout()" class="btn btn-outline-secondary">Logout</button>
+        </header>
+        <div id="page-content"></div>
+    </div>`;
+}
+
+function renderEmployeeLayout() {
+    const isActive = (page) => currentPage === page ? ' active' : '';
+
+    return `
+    <header>
+        <h1>Employee Dashboard</h1>
+        <div style="position:absolute; top:16px; right:16px;">
+            <button onclick="logout()" class="btn btn-outline-secondary">Logout</button>
+        </div>
+    </header>
+    <nav class="navbar navbar-expand bg-body-tertiary px-3">
+        <ul class="navbar-nav d-flex flex-row gap-3">
+            <li class="nav-item">
+                <a class="nav-link${isActive('project_overview')}" href="#" onclick="navigateTo('project_overview'); return false;">Project Overview</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link${isActive('team_tasks')}" href="#" onclick="navigateTo('team_tasks'); return false;">Team Tasks</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link${isActive('current_tasks')}" href="#" onclick="navigateTo('current_tasks'); return false;">Current Tasks</a>
+            </li>
+        </ul>
+    </nav>
+
+    <div class="container py-4">
+        <div id="page-content"></div>
+    </div>`;
+}
+
+function navigateTo(page) {
+    currentPage = page;
+    renderApp();
+}
+
+async function loadPageContent(page) {
+    const container = document.getElementById('page-content');
+    container.innerHTML = '<div class="text-center py-5"><div class="spinner-border" role="status"></div></div>';
+
+    try {
+        switch (page) {
+            case 'project_overview':
+                await loadProjectOverview(container);
+                break;
+            case 'task_management':
+                await loadTaskManagement(container);
+                break;
+            case 'user_management':
+                await loadUserManagement(container);
+                break;
+            case 'team_tasks':
+                await loadTeamTasks(container);
+                break;
+            case 'current_tasks':
+                await loadCurrentTasks(container);
+                break;
+            default:
+                container.innerHTML = '<p>Page not found</p>';
+        }
+    } catch (error) {
+        container.innerHTML = `<div class="alert alert-danger">Error loading page: ${error.message}</div>`;
+    }
+}
+
+async function loadProjectOverview(container) {
+    const tasks = await api('/tasks/all');
+
+    container.innerHTML = `
+    <section id="project-overview">
+        <h2>Project Overview</h2>
+        <div id="project-list">
+            <table id="projectOverviewTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Assigned to</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Updated At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tasks.map(task => {
+                        const assigned = task.employee_responsible || task.assigned_to || 'Unassigned';
+                        return `
+                        <tr>
+                            <td>${escapeHtml(task.task || '')}</td>
+                            <td>${escapeHtml(assigned)}</td>
+                            <td>${escapeHtml(task.status || 'Pending')}</td>
+                            <td>${escapeHtml(task.created_at || '')}</td>
+                            <td>${escapeHtml(task.updated_at || '')}</td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    </section>`;
+
+    initDataTable('#projectOverviewTable');
+}
+
+async function loadTaskManagement(container) {
+    const tasks = await api('/tasks');
+
+    container.innerHTML = `
+    <section id="task-management">
+        <h2>Task Management</h2>
+
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+            Add Task
+        </button>
+
+        <div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addTaskModalLabel">Add Task</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="add-task-form">
+                            <div class="mb-3">
+                                <input type="text" name="task" class="form-control" placeholder="Enter task" required>
+                            </div>
+                            <div class="mb-3">
+                                <select name="role" class="form-select" required>
+                                    <option value="admin">Admin</option>
+                                    <option value="developers">Developer</option>
+                                    <option value="hr">HR</option>
+                                    <option value="accounting">Accounting</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success">Create Task</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="task-list">
+            <table id="taskManagementTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Assigned to</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Updated At</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tasks.map(task => `
+                    <tr>
+                        <td>${escapeHtml(task.task || '')}</td>
+                        <td>${escapeHtml(task.assigned_to || task.employee_responsible || 'Unassigned')}</td>
+                        <td>${escapeHtml(task.status || 'Pending')}</td>
+                        <td>${escapeHtml(task.created_at || '')}</td>
+                        <td>${escapeHtml(task.updated_at || '')}</td>
+                        <td>
+                            <button onclick="deleteTask(${task.id})" class="btn btn-sm btn-danger">Delete</button>
+                        </td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>
+    </section>`;
+
+    initDataTable('#taskManagementTable');
+
+    document.getElementById('add-task-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        try {
+            await apiForm('/tasks', formData);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addTaskModal'));
+            modal.hide();
+            loadPageContent('task_management');
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    });
+}
+
+async function deleteTask(taskId) {
+    if (!confirm('Are you sure?')) return;
+    try {
+        await api('/tasks', {
+            method: 'DELETE',
+            body: JSON.stringify({ task_id: taskId })
+        });
+        loadPageContent('task_management');
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+async function loadUserManagement(container) {
+    const users = await api('/users');
+
+    container.innerHTML = `
+    <section id="user-management">
+        <h2>User Management</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+            Add User
+        </button>
+
+        <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addUserModalLabel">Add User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="add-user-form">
+                            <div class="mb-3">
+                                <input type="text" name="username" class="form-control" placeholder="Enter username" required>
+                            </div>
+                            <div class="mb-3">
+                                <input type="password" name="password" class="form-control" placeholder="Enter password" required>
+                            </div>
+                            <div class="mb-3">
+                                <select name="role" class="form-select" required>
+                                    <option value="admin">Admin</option>
+                                    <option value="developers">Developer</option>
+                                    <option value="hr">HR</option>
+                                    <option value="accounting">Accounting</option>
+                                    <option value="user">User</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success">Create User</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="user-list">
+            <table id="userManagementTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${users.map(user => `
+                    <tr>
+                        <td>${escapeHtml(user.username)}</td>
+                        <td>${escapeHtml(user.role)}</td>
+                        <td>
+                            <button onclick="deleteUser(${user.id})" class="btn btn-sm btn-danger">Delete</button>
+                        </td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>
+    </section>`;
+
+    initDataTable('#userManagementTable');
+
+    document.getElementById('add-user-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        try {
+            await apiForm('/users', formData);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addUserModal'));
+            modal.hide();
+            loadPageContent('user_management');
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    });
+}
+
+async function deleteUser(userId) {
+    if (!confirm('Are you sure?')) return;
+    try {
+        await api('/users', {
+            method: 'DELETE',
+            body: JSON.stringify({ user_id: userId })
+        });
+        loadPageContent('user_management');
+    } catch (error) {
+        alert('Error: ' + error.message);
+    }
+}
+
+async function loadTeamTasks(container) {
+    const tasks = await api('/tasks/team');
+
+    container.innerHTML = `
+    <section id="team-overview">
+        <h2>Team Overview</h2>
+        <table id="teamTasksTable" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Assigned To</th>
+                    <th>Action</th>
+                    <th>Status</th>
+                    <th>Created At</th>
+                    <th>Updated At</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tasks.map(row => {
+                    const assigned = row.employee_responsible || 'Unassigned';
+                    const canTake = assigned === 'Unassigned';
+                    return `
+                    <tr>
+                        <td>${escapeHtml(row.task || '')}</td>
+                        <td>${escapeHtml(assigned)}</td>
+                        <td>
+                            ${canTake ? `<button onclick="takeTask(${row.id}, this)" class="btn btn-sm btn-primary">Take Task</button>` : ''}
+                        </td>
+                        <td>${escapeHtml(row.status || '')}</td>
+                        <td>${escapeHtml(row.created_at || '')}</td>
+                        <td>${escapeHtml(row.updated_at || '')}</td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>
+    </section>`;
+
+    initDataTable('#teamTasksTable');
+}
+
+async function takeTask(taskId, button) {
+    button.disabled = true;
+    button.textContent = 'Taking...';
+    try {
+        await api('/tasks/take', {
+            method: 'POST',
+            body: JSON.stringify({ task_id: taskId })
+        });
+        loadPageContent('team_tasks');
+    } catch (error) {
+        alert('Error: ' + error.message);
+        button.disabled = false;
+        button.textContent = 'Take Task';
+    }
+}
+
+async function loadCurrentTasks(container) {
+    const tasks = await api('/tasks/mine');
+
+    container.innerHTML = `
+    <section id="task-management">
+        <h2>Task Undertaking</h2>
+        <table id="currentTasksTable" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tasks.map(row => `
+                <tr>
+                    <td>${escapeHtml(row.task || '')}</td>
+                    <td>${escapeHtml(row.status || '')}</td>
+                    <td>
+                        <button onclick="completeTask(${row.id}, this)" class="btn btn-sm btn-success">Mark as Completed</button>
+                    </td>
+                </tr>`).join('')}
+            </tbody>
+        </table>
+    </section>`;
+
+    initDataTable('#currentTasksTable');
+}
+
+async function completeTask(taskId, button) {
+    button.disabled = true;
+    button.textContent = 'Updating...';
+    try {
+        await api('/tasks/complete', {
+            method: 'POST',
+            body: JSON.stringify({ task_id: taskId })
+        });
+
+        const row = button.closest('tr');
+        row.querySelector('td:nth-child(2)').textContent = 'Completed';
+        button.parentElement.innerHTML = '<span class="text-muted">Done</span>';
+    } catch (error) {
+        alert('Error: ' + error.message);
+        button.disabled = false;
+        button.textContent = 'Mark as Completed';
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function initDataTable(selector) {
+    if (typeof $ !== 'undefined' && $.fn.DataTable) {
+        $(selector).DataTable();
+    }
+}

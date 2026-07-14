@@ -1,9 +1,17 @@
 <?php
-namespace App\Core;
 
 class Router
 {
     private array $routes = [];
+
+    public static function getInstance(): Router
+    {
+        static $instance = null;
+        if ($instance === null) {
+            $instance = new Router();
+        }
+        return $instance;
+    }
 
     public function get(string $path, string $action, array $middleware = []): void
     {
@@ -53,7 +61,12 @@ class Router
         }
 
         [$controllerName, $methodName] = explode('@', $route['action'], 2);
-        $controllerClass = "App\\Controllers\\{$controllerName}";
+        $controllerClass = $controllerName;
+
+        $controllerFile = __DIR__ . '/../controller/' . $controllerName . '.php';
+        if (file_exists($controllerFile)) {
+            require_once $controllerFile;
+        }
 
         if (!class_exists($controllerClass)) {
             Response::json(['error' => 'Controller not found'], 500);

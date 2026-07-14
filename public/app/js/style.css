@@ -1,0 +1,14 @@
+header {
+    background: #f8f9fa;
+    padding: 1rem;
+    position: relative;
+}
+
+header h1 {
+    margin: 0;
+}
+
+.nav-link.active {
+    font-weight: bold;
+    color: #0d6efd !important;
+}

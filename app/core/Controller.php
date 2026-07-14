@@ -1,15 +1,18 @@
 <?php
-namespace App\Core;
 
 class Controller
 {
     protected function model(string $model)
     {
-        $modelClass = "App\\Models\\{$model}";
-        if (!class_exists($modelClass)) {
+        $modelFile = __DIR__ . '/../model/' . strtolower($model) . '.php';
+        if (file_exists($modelFile)) {
+            require_once $modelFile;
+        }
+
+        if (!class_exists($model)) {
             throw new \Exception("Model not found: {$model}");
         }
-        return new $modelClass();
+        return new $model();
     }
 
     protected function getInput(): array

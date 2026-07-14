@@ -1,5 +1,4 @@
 <?php
-// app/controller/AuthController.php
 
 class AuthController extends Controller
 {

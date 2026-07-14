@@ -1,5 +1,4 @@
 <?php
-// app/controller/UserController.php
 
 class UserController extends Controller
 {
