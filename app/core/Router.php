@@ -4,15 +4,6 @@ class Router
 {
     private array $routes = [];
 
-    public static function getInstance(): Router
-    {
-        static $instance = null;
-        if ($instance === null) {
-            $instance = new Router();
-        }
-        return $instance;
-    }
-
     public function get(string $path, string $action, array $middleware = []): void
     {
         $this->routes['GET'][$path] = ['action' => $action, 'middleware' => $middleware];
