@@ -291,4 +291,95 @@ class TaskController extends Controller
         $tasks = $this->task->getAll();
         Response::json($tasks);
     }
+
+    #[OA\Patch(
+        path: "/tasks/{id}",
+        summary: "Update a task",
+        tags: ["Tasks"],
+        security: [["sessionAuth" => []]],
+        parameters: [
+            new OA\Parameter(
+                name: "id",
+                in: "path",
+                description: "ID of the task to update",
+                required: true,
+                schema: new OA\Schema(type: "integer")
+            )
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "task", type: "string"),
+                    new OA\Property(property: "assigned_to", type: "string"),
+                    new OA\Property(property: "employee_responsible", type: "string"),
+                    new OA\Property(property: "status", type: "string")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Task updated successfully",
+                content: new OA\JsonContent(type:"object", properties:[
+                    new OA\Property(property:"success", type:"boolean"),
+                    new OA\Property(property:"message", type:"string"),
+                    new OA\Property(property:"task_id", type:"integer")
+                ])
+            ),
+            new OA\Response(
+                response: 400,
+                description: "Invalid input data"
+            ),
+            new OA\Response(
+                response: 404,
+                description: "Task not found"
+            )
+        ]
+    )]
+    public function edit(): void
+{
+    Auth::requireAdmin();
+    
+    $data = $this->getInput();
+    $taskId = (int)($data['task_id'] ?? 0);
+    
+    if (!$taskId) {
+        Response::json(['error' => 'Task ID required'], 400);
+        return;
+    }
+    
+    $task = $this->task->findById($taskId);
+    if (!$task) {
+        Response::json(['error' => 'Task not found'], 404);
+        return;
+    }
+    
+    $updateData = [];
+    $allowedFields = ['task', 'assigned_to', 'employee_responsible', 'status'];
+    
+    foreach ($allowedFields as $field) {
+        if (isset($data[$field])) {
+            $updateData[$field] = $data[$field];
+        }
+    }
+    
+    if (empty($updateData)) {
+        Response::json(['error' => 'No fields to update'], 400);
+        return;
+    }
+    
+    $success = $this->task->update($taskId, $updateData);
+    
+    if ($success) {
+        Response::json([
+            'success' => true,
+            'message' => 'Task updated',
+            'task_id' => $taskId
+        ]);
+    } else {
+        Response::json(['error' => 'Update failed'], 500);
+    }
+}
 }

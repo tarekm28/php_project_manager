@@ -27,6 +27,7 @@ $router->post('/logout', 'AuthController@logout', [AuthMiddleware::class]);
 $router->get('/tasks', 'TaskController@index', [AuthMiddleware::class, AdminMiddleware::class]);
 $router->post('/tasks', 'TaskController@create', [AuthMiddleware::class, AdminMiddleware::class]);
 $router->delete('/tasks', 'TaskController@delete', [AuthMiddleware::class, AdminMiddleware::class]);
+$router->patch('/tasks', 'TaskController@edit', [AuthMiddleware::class, AdminMiddleware::class]);
 $router->get('/users', 'UserController@index', [AuthMiddleware::class, AdminMiddleware::class]);
 $router->post('/users', 'UserController@create', [AuthMiddleware::class, AdminMiddleware::class]);
 $router->delete('/users', 'UserController@delete', [AuthMiddleware::class, AdminMiddleware::class]);

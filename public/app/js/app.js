@@ -168,12 +168,13 @@ async function loadTaskManagement(container) {
             Add Task
         </button>
 
-        <div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+        <!-- Add Task Modal -->
+        <div class="modal fade" id="addTaskModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="addTaskModalLabel">Add Task</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <h5 class="modal-title">Add Task</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <form id="add-task-form">
@@ -194,7 +195,47 @@ async function loadTaskManagement(container) {
                 </div>
             </div>
         </div>
-        <div id="task-list">
+
+        <!-- Edit Task Modal -->
+        <div class="modal fade" id="editTaskModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Task</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="edit-task-form">
+                            <input type="hidden" name="task_id" id="edit-task-id">
+                            <div class="mb-3">
+                                <label>Task Name</label>
+                                <input type="text" name="task" id="edit-task-name" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label>Status</label>
+                                <select name="status" id="edit-task-status" class="form-select">
+                                    <option value="Pending">Pending</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label>Assigned To</label>
+                                <select name="assigned_to" id="edit-task-assigned" class="form-select">
+                                    <option value="admin">Admin</option>
+                                    <option value="developers">Developer</option>
+                                    <option value="hr">HR</option>
+                                    <option value="accounting">Accounting</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success">Update Task</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="task-list" class="mt-3">
             <table id="taskManagementTable" class="table table-striped">
                 <thead>
                     <tr>
@@ -203,7 +244,7 @@ async function loadTaskManagement(container) {
                         <th>Status</th>
                         <th>Created At</th>
                         <th>Updated At</th>
-                        <th>Action</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -215,6 +256,7 @@ async function loadTaskManagement(container) {
                         <td>${escapeHtml(task.created_at || '')}</td>
                         <td>${escapeHtml(task.updated_at || '')}</td>
                         <td>
+                            <button onclick="openEditModal(${task.id})" class="btn btn-sm btn-warning">Edit</button>
                             <button onclick="deleteTask(${task.id})" class="btn btn-sm btn-danger">Delete</button>
                         </td>
                     </tr>`).join('')}
@@ -225,22 +267,62 @@ async function loadTaskManagement(container) {
 
     initDataTable('#taskManagementTable');
 
+    // Add Task Form Handler
     document.getElementById('add-task-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = new FormData(this);
         try {
             await apiForm('/tasks', formData);
-            const modal = bootstrap.Modal.getInstance(document.getElementById('addTaskModal'));
-            modal.hide();
+            bootstrap.Modal.getInstance(document.getElementById('addTaskModal')).hide();
+            this.reset();
+            loadPageContent('task_management');
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    });
+
+    // Edit Task Form Handler
+    document.getElementById('edit-task-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData);
+        
+        try {
+            await api('/tasks/edit', {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+            bootstrap.Modal.getInstance(document.getElementById('editTaskModal')).hide();
             loadPageContent('task_management');
         } catch (error) {
             alert('Error: ' + error.message);
         }
     });
 }
+async function openEditModal(taskId) {
+    // Fetch all tasks to find the one we want
+    const tasks = await api('/tasks');
+    const task = tasks.find(t => t.id === taskId);
+    
+    if (!task) {
+        alert('Task not found');
+        return;
+    }
+    
+    // Populate the form
+    document.getElementById('edit-task-id').value = task.id;
+    document.getElementById('edit-task-name').value = task.task || '';
+    document.getElementById('edit-task-status').value = task.status || 'Pending';
+    document.getElementById('edit-task-assigned').value = task.assigned_to || 'admin';
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('editTaskModal'));
+    modal.show();
+}
 
 async function deleteTask(taskId) {
-    if (!confirm('Are you sure?')) return;
+    if (!confirm('Are you sure you want to delete this task?')) return;
+    
     try {
         await api('/tasks', {
             method: 'DELETE',

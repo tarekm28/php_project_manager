@@ -80,4 +80,25 @@ class Task extends Model
         $stmt = $this->db->prepare("DELETE FROM tasks WHERE id = ?");
         $stmt->execute([$taskId]);
     }
+
+    public function update(int $id, array $data): bool
+    {
+        $allowed = ['task', 'assigned_to', 'employee_responsible', 'status'];
+        $sets = [];
+        $values = [];
+        
+        foreach ($data as $key => $value) {
+            if (in_array($key, $allowed)) {
+                $sets[] = "$key = ?";
+                $values[] = $value;
+            }
+        }
+        
+        if (empty($sets)) return false;
+        
+        $values[] = $id;
+        $sql = "UPDATE tasks SET " . implode(', ', $sets) . " WHERE id = ?";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($values);
+    }
 }
