@@ -4,27 +4,23 @@ class Controller
 {
     protected function model(string $model)
     {
-    $modelFile = __DIR__ . '/../model/' . $model . '.php';
-
-    if (!file_exists($modelFile)) {
-        throw new Exception("Model not found: {$model}");
-    }
-
-    require_once $modelFile;
-
-    return new $model();
-    }
-
-    protected function view($view, array $data = []): void
-    {
-        extract($data);
-
-        $viewFile = __DIR__ . '/../../view/' . $view . '.php';
-
-        if (!file_exists($viewFile)) {
-            throw new Exception("View not found: {$view}");
+        $modelFile = __DIR__ . '/../model/' . strtolower($model) . '.php';
+        if (file_exists($modelFile)) {
+            require_once $modelFile;
         }
 
-        require $viewFile;
+        if (!class_exists($model)) {
+            throw new \Exception("Model not found: {$model}");
+        }
+        return new $model();
+    }
+
+    protected function getInput(): array
+    {
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        if (str_contains($contentType, 'application/json')) {
+            return json_decode(file_get_contents('php://input'), true) ?? [];
+        }
+        return $_POST;
     }
 }

@@ -1,7 +1,4 @@
 <?php
-require_once __DIR__ . '/Session.php';
-require_once __DIR__ . '/Response.php';
-
 class Auth
 {
     public static function login(array $user): void
@@ -26,10 +23,7 @@ class Auth
 
     public static function user(): ?array
     {
-        if (!self::check()) {
-            return null;
-        }
-
+        if (!self::check()) return null;
         return [
             'id' => Session::get('user_id'),
             'username' => Session::get('username'),
@@ -45,20 +39,15 @@ class Auth
     public static function requireLogin(): void
     {
         if (!self::check()) {
-            $scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '\\/');
-            $redirectUrl = ($scriptDir ?: '') . '/index.php?route=/login';
-            Response::redirect($redirectUrl);
+            Response::json(['error' => 'Unauthorized'], 401);
         }
     }
 
     public static function requireAdmin(): void
     {
         self::requireLogin();
-
         if (!self::isAdmin()) {
-            http_response_code(403);
-            echo 'Forbidden';
-            exit;
+            Response::json(['error' => 'Forbidden'], 403);
         }
     }
 }

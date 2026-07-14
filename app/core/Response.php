@@ -2,16 +2,9 @@
 
 class Response
 {
-    public static function redirect(string $url): void
+    public static function json($data, int $status = 200): void
     {
-        if (!headers_sent()) {
-            header('Location: ' . $url);
-        }
-        exit;
-    }
-
-    public static function json($data): void
-    {
+        http_response_code($status);
         header('Content-Type: application/json');
         echo json_encode($data);
         exit;

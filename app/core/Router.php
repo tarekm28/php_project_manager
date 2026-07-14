@@ -4,72 +4,67 @@ class Router
 {
     private array $routes = [];
 
-    public function get(string $path, string $action): void
+    public function get(string $path, string $action, array $middleware = []): void
     {
-        $this->routes['GET'][$path] = $action;
+        $this->routes['GET'][$path] = ['action' => $action, 'middleware' => $middleware];
     }
 
-    public function post(string $path, string $action): void
+    public function post(string $path, string $action, array $middleware = []): void
     {
-        $this->routes['POST'][$path] = $action;
+        $this->routes['POST'][$path] = ['action' => $action, 'middleware' => $middleware];
+    }
+
+    public function put(string $path, string $action, array $middleware = []): void
+    {
+        $this->routes['PUT'][$path] = ['action' => $action, 'middleware' => $middleware];
+    }
+
+    public function patch(string $path, string $action, array $middleware = []): void
+    {
+        $this->routes['PATCH'][$path] = ['action' => $action, 'middleware' => $middleware];
+    }
+
+    public function delete(string $path, string $action, array $middleware = []): void
+    {
+        $this->routes['DELETE'][$path] = ['action' => $action, 'middleware' => $middleware];
     }
 
     public function dispatch(): void
     {
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        $uri = $_GET['route'] ?? parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
         
-        // Check query param first
-        $uri = $_GET['route'] ?? null;
-        
-        if ($uri === null) {
-            $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
-
-            // Auto-detect script directory to strip it
-            $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
-            $scriptDir = dirname($scriptName);
-            // Normalize slashes
-            $scriptDir = str_replace('\\', '/', $scriptDir);
-            
-            if ($scriptDir !== '/' && !empty($scriptDir) && strpos($uri, $scriptDir) === 0) {
-                $uri = substr($uri, strlen($scriptDir));
-            }
+        $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+        if ($scriptDir !== '/' && !empty($scriptDir) && strpos($uri, $scriptDir) === 0) {
+            $uri = substr($uri, strlen($scriptDir));
         }
-
-        if (empty($uri)) {
-            $uri = '/';
-        }
-        
-        if ($uri !== '/' && strpos($uri, '/') !== 0) {
-            $uri = '/' . $uri;
-        }
-
-        // Strip trailing slash if it is not just '/'
-        if ($uri !== '/' && substr($uri, -1) === '/') {
-            $uri = rtrim($uri, '/');
-        }
-
-        // Normalize direct index.php requests to the root route
-        if ($uri === '/index.php') {
-            $uri = '/';
-        }
+        if (empty($uri) || $uri === '/index.php') $uri = '/';
 
         if (!isset($this->routes[$method][$uri])) {
-            http_response_code(404);
-            echo '404 Not Found';
+            Response::json(['error' => 'Not found'], 404);
             return;
         }
 
-        [$controllerName, $methodName] = explode('@', $this->routes[$method][$uri], 2);
-        $controllerFile = __DIR__ . '/../controller/' . $controllerName . '.php';
+        $route = $this->routes[$method][$uri];
 
-        if (!file_exists($controllerFile)) {
-            throw new Exception("Controller not found: {$controllerName}");
+        foreach ($route['middleware'] as $middlewareClass) {
+            $middlewareClass::handle();
         }
 
-        require_once $controllerFile;
+        [$controllerName, $methodName] = explode('@', $route['action'], 2);
+        $controllerClass = $controllerName;
 
-        $controller = new $controllerName();
-        
+        $controllerFile = __DIR__ . '/../controller/' . $controllerName . '.php';
+        if (file_exists($controllerFile)) {
+            require_once $controllerFile;
+        }
+
+        if (!class_exists($controllerClass)) {
+            Response::json(['error' => 'Controller not found'], 500);
+            return;
+        }
+
+        $controller = new $controllerClass();
         $controller->$methodName();
     }
 }

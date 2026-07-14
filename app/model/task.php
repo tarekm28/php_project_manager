@@ -2,6 +2,23 @@
 require_once __DIR__ . '/../core/database.php';
 require_once __DIR__ . '/../core/Model.php';
 
+use OpenApi\Attributes as OA;
+
+#[OA\Schema(
+    schema: "Task",
+    type: "object",
+    properties: [
+        new OA\Property(property: "id", type: "integer", description: "Unique identifier for the task"),
+        new OA\Property(property: "task", type: "string", description: "Description of the task"),
+        new OA\Property(property: "assigned_to", type: "string", description: "Team assigned to the task"),
+        new OA\Property(property: "employee_responsible", type: "string", description: "Username of the employee responsible for the task"),
+        new OA\Property(property: "status", type: "string", description: "Current status of the task (Pending, In Progress, Completed)"),
+        new OA\Property(property: "created_at", type: "string", format: "date-time", description: "Timestamp when the task was created"),
+        new OA\Property(property: "updated_at", type: "string", format: "date-time", description: "Timestamp when the task was last updated")
+    ]
+)]
+
+
 class Task extends Model
 {
 

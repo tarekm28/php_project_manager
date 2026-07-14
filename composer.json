@@ -1,0 +1,8 @@
+{
+    "require": {
+        "zircote/swagger-php": "^6.4"
+    },
+    "scripts": {
+        "docs": "php docs/generateSpecs.php"
+    }
+}
