@@ -288,8 +288,8 @@ async function loadTaskManagement(container) {
         const data = Object.fromEntries(formData);
         
         try {
-            await api('/tasks/edit', {
-                method: 'POST',
+            await api('/tasks', {
+                method: 'PATCH',
                 body: JSON.stringify(data)
             });
             bootstrap.Modal.getInstance(document.getElementById('editTaskModal')).hide();
