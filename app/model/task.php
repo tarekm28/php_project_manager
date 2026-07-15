@@ -100,4 +100,9 @@ class Task extends Model
         $stmt = $this->db->prepare("UPDATE tasks SET " . implode(', ', $sets) . " WHERE id = ?");
         return $stmt->execute($values);
     }
+
+    public function getLastID(): int
+    {
+        return (int)$this->db->lastInsertId();
+    }
 }

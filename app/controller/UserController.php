@@ -76,7 +76,7 @@ class UserController extends Controller
         }
 
         $this->user->createUser($username, $password, $role);
-        $newUserId = (int) $this->db->lastInsertId();
+        $newUserId = (int) $this->user->getLastID();
 
         $user = Auth::user();
         $this->log->log(

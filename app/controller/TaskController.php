@@ -84,7 +84,7 @@ class TaskController extends Controller
         }
 
         $this->task->create($task, $role);
-        $newTaskId = (int) $this->db->lastInsertId();
+        $newTaskId = (int) $this->task->getLastID();
 
         $user = Auth::user();
         $this->log->log(

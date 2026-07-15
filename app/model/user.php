@@ -57,5 +57,8 @@ class User extends Model
         return $stmt->execute($values);
     }
 
-
+    public function getLastID(): int
+    {
+        return (int)$this->db->lastInsertId();
+    }
 }
