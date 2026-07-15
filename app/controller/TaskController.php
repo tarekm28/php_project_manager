@@ -293,7 +293,7 @@ class TaskController extends Controller
     }
 
     #[OA\Patch(
-        path: "/tasks/{id}",
+        path: "/tasks",
         summary: "Update a task",
         tags: ["Tasks"],
         security: [["sessionAuth" => []]],

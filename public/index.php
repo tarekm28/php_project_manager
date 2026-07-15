@@ -31,6 +31,7 @@ $router->patch('/tasks', 'TaskController@edit', [AuthMiddleware::class, AdminMid
 $router->get('/users', 'UserController@index', [AuthMiddleware::class, AdminMiddleware::class]);
 $router->post('/users', 'UserController@create', [AuthMiddleware::class, AdminMiddleware::class]);
 $router->delete('/users', 'UserController@delete', [AuthMiddleware::class, AdminMiddleware::class]);
+$router->patch('/users', 'UserController@edit', [AuthMiddleware::class, AdminMiddleware::class]);
 
 
 $router->get('/tasks/mine', 'TaskController@myTasks', [AuthMiddleware::class]);

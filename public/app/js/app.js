@@ -195,8 +195,6 @@ async function loadTaskManagement(container) {
                 </div>
             </div>
         </div>
-
-        <!-- Edit Task Modal -->
         <div class="modal fade" id="editTaskModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -267,7 +265,6 @@ async function loadTaskManagement(container) {
 
     initDataTable('#taskManagementTable');
 
-    // Add Task Form Handler
     document.getElementById('add-task-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = new FormData(this);
@@ -281,7 +278,6 @@ async function loadTaskManagement(container) {
         }
     });
 
-    // Edit Task Form Handler
     document.getElementById('edit-task-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = new FormData(this);
@@ -300,7 +296,6 @@ async function loadTaskManagement(container) {
     });
 }
 async function openEditModal(taskId) {
-    // Fetch all tasks to find the one we want
     const tasks = await api('/tasks');
     const task = tasks.find(t => t.id === taskId);
     
@@ -309,13 +304,11 @@ async function openEditModal(taskId) {
         return;
     }
     
-    // Populate the form
     document.getElementById('edit-task-id').value = task.id;
     document.getElementById('edit-task-name').value = task.task || '';
     document.getElementById('edit-task-status').value = task.status || 'Pending';
     document.getElementById('edit-task-assigned').value = task.assigned_to || 'admin';
     
-    // Show modal
     const modal = new bootstrap.Modal(document.getElementById('editTaskModal'));
     modal.show();
 }
@@ -374,6 +367,36 @@ async function loadUserManagement(container) {
                 </div>
             </div>
         </div>
+        <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="edit-user-form">
+                            <div class="mb-3">
+                                <input type="text" name="username" class="form-control" placeholder="Enter username" required>
+                            </div>
+                            <div class="mb-3">
+                                <input type="password" name="password" class="form-control" placeholder="Enter password">
+                            </div>
+                            <div class="mb-3">
+                                <select name="role" class="form-select" required>
+                                    <option value="admin">Admin</option>
+                                    <option value="developers">Developer</option>
+                                    <option value="hr">HR</option>
+                                    <option value="accounting">Accounting</option>
+                                    <option value="user">User</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success">Update User</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div id="user-list">
             <table id="userManagementTable" class="table table-striped">
                 <thead>
@@ -389,6 +412,7 @@ async function loadUserManagement(container) {
                         <td>${escapeHtml(user.username)}</td>
                         <td>${escapeHtml(user.role)}</td>
                         <td>
+                            <button onclick="openEditUserModal(${user.id})" class="btn btn-sm btn-warning">Edit</button>
                             <button onclick="deleteUser(${user.id})" class="btn btn-sm btn-danger">Delete</button>
                         </td>
                     </tr>`).join('')}
@@ -411,6 +435,51 @@ async function loadUserManagement(container) {
             alert('Error: ' + error.message);
         }
     });
+
+    document.getElementById('edit-user-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const form = this;
+        const userId = Number(form.dataset.userId);
+        const username = form.querySelector('input[name="username"]').value.trim();
+        const role = form.querySelector('select[name="role"]').value;
+        const password = form.querySelector('input[name="password"]').value;
+        const payload = { user_id: userId };
+
+        if (username) payload.username = username;
+        if (role) payload.role = role;
+        if (password) payload.password = password;
+
+        try {
+            await api('/users', {
+                method: 'PATCH',
+                body: JSON.stringify(payload)
+            });
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+            modal.hide();
+            loadPageContent('user_management');
+        } catch (error) {
+            alert('Error: ' + error.message);
+        }
+    });
+}
+
+async function openEditUserModal(userId) {
+    const users = await api('/users');
+    const user = users.find(u => u.id === userId);
+    if (!user) {
+        alert('User not found');
+        return;
+    }
+
+    const form = document.getElementById('edit-user-form');
+    const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+
+    form.dataset.userId = userId;
+    form.querySelector('input[name="username"]').value = user.username || '';
+    form.querySelector('input[name="password"]').value = '';
+    form.querySelector('select[name="role"]').value = user.role || 'user';
+
+    modal.show();
 }
 
 async function deleteUser(userId) {

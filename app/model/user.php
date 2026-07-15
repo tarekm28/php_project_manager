@@ -34,5 +34,28 @@ class User extends Model
         $stmt->execute([$userId]);
     }
 
+    public function getUserById(int $userId): ?array {
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+        return $user ?: null;
+    }
+
+    public function updateUser(int $userId, array $data): bool 
+    {
+        $allowedFields = ['username', 'password', 'role'];
+        $sets = [];
+        $values = [];
+        foreach ($data as $key => $value) {
+            if (in_array($key, $allowedFields)) {
+             $sets[] = "$key = ?";
+             $values[] = $value;   
+            }
+        }
+        $values[] = $userId;
+        $stmt = $this->db->prepare("UPDATE users SET " . implode(', ', $sets) . " WHERE id = ?");
+        return $stmt->execute($values);
+    }
+
 
 }

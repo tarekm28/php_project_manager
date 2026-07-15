@@ -97,8 +97,7 @@ class Task extends Model
         if (empty($sets)) return false;
         
         $values[] = $id;
-        $sql = "UPDATE tasks SET " . implode(', ', $sets) . " WHERE id = ?";
-        $stmt = $this->db->prepare($sql);
+        $stmt = $this->db->prepare("UPDATE tasks SET " . implode(', ', $sets) . " WHERE id = ?");
         return $stmt->execute($values);
     }
 }

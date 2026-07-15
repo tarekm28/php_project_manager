@@ -78,7 +78,7 @@ class UserController extends Controller
     }
 
     #[OA\Delete(
-        path: "/users/{user_id}",
+        path: "/users",
         summary: "Delete a user",
         tags: ["Users"],
         security: [["sessionAuth" => []]],
@@ -119,6 +119,82 @@ class UserController extends Controller
         }
 
         $this->user->deleteUser($userId);
-        Response::json(['success' => true]);
+        Response::json(['success' => true], 200);
+    }
+
+    #[OA\Patch(
+        path: "/users",
+        summary: "Update a user",
+        tags: ["Users"],
+        security: [["sessionAuth" => []]],
+        parameters: [
+            new OA\Parameter(
+                name: "user_id",
+                in: "path",
+                required: true,
+                description: "ID of the user to update",
+                schema: new OA\Schema(type: "integer", example: 1)
+            )
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "username", type: "string", example: "john_doe"),
+                    new OA\Property(property: "password", type: "string", example: "new_secret"),
+                    new OA\Property(property: "role", type: "string", example: "developers")
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "User updated",
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: "success", type: "boolean", example: true)
+                ])
+            ),
+            new OA\Response(
+                response: 400,
+                description: "Bad request",
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: "error", type: "string", example: "User ID and update data required")
+                ])
+            )
+        ]
+    )]
+    public function edit(): void
+    {
+        $data = $this->getInput();
+        $userId = (int)($data['user_id'] ?? 0);
+        $updateData = [];
+        $allowedFields = ['username', 'password', 'role'];
+
+        foreach ($allowedFields as $field) {
+            if (array_key_exists($field, $data) && $data[$field] !== '') {
+                $updateData[$field] = $data[$field];
+            }
+        }
+
+        if (empty($updateData) && !empty($data['update_data'])) {
+            $updateData = $data['update_data'];
+        }
+
+        if (!$userId || empty($updateData)) {
+            Response::json(['error' => 'User ID and update data required'], 400);
+            return;
+        }
+
+        $success = $this->user->updateUser($userId, $updateData);
+        if ($success) {
+            Response::json([
+                'success' => true,
+                'message' => 'User updated successfully',
+                'updated_user' => $this->user->getUserById($userId)
+                ], 200);
+        } else {
+            Response::json(['error' => 'Update failed'], 500);
+        }
     }
 }
