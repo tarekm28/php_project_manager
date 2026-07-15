@@ -5,11 +5,13 @@ use OpenApi\Attributes as OA;
 
 class TaskController extends Controller
 {
-    private Task $task;
+    private ActivityLog $log;
 
     public function __construct()
     {
+        Auth::requireLogin();
         $this->task = $this->model('Task');
+        $this->log = $this->model('ActivityLog');
     }
 
     #[OA\Get(
@@ -70,6 +72,8 @@ class TaskController extends Controller
     )]
     public function create(): void
     {
+        Auth::requireAdmin();
+        
         $data = $this->getInput();
         $task = $data['task'] ?? '';
         $role = $data['role'] ?? '';
@@ -80,7 +84,20 @@ class TaskController extends Controller
         }
 
         $this->task->create($task, $role);
-        Response::json(['success' => true, 'message' => 'Task created'], 201);
+        $newTaskId = (int) $this->db->lastInsertId();
+
+        $user = Auth::user();
+        $this->log->log(
+            $user['id'],
+            $user['username'],
+            'create',
+            'task',
+            $newTaskId,
+            null,
+            ['task' => $task, 'assigned_to' => $role, 'status' => 'Pending']
+        );
+
+        Response::json(['success' => true, 'message' => 'Task created', 'task_id' => $newTaskId], 201);
     }
 
     #[OA\Delete(
@@ -123,6 +140,8 @@ class TaskController extends Controller
     )]
     public function delete(): void
     {
+        Auth::requireAdmin();
+        
         $data = $this->getInput();
         $taskId = (int)($data['task_id'] ?? 0);
 
@@ -131,7 +150,21 @@ class TaskController extends Controller
             return;
         }
 
+        $oldTask = $this->task->findById($taskId);
+        
         $this->task->delete($taskId);
+
+        $user = Auth::user();
+        $this->log->log(
+            $user['id'],
+            $user['username'],
+            'delete',
+            'task',
+            $taskId,
+            $oldTask ?: null,
+            null
+        );
+
         Response::json(['success' => true]);
     }
 
@@ -177,7 +210,21 @@ class TaskController extends Controller
             return;
         }
 
+        $oldTask = $this->task->findById($taskId);
+
         $this->task->take($taskId, $username);
+
+        $user = Auth::user();
+        $this->log->log(
+            $user['id'],
+            $user['username'],
+            'take',
+            'task',
+            $taskId,
+            $oldTask ?: null,
+            array_merge($oldTask ?: [], ['employee_responsible' => $username, 'status' => 'In Progress'])
+        );
+
         Response::json(['success' => true]);
     }
 
@@ -230,7 +277,19 @@ class TaskController extends Controller
         }
 
         $this->task->complete($taskId, $username);
-        Response::json(['success' => true, 'task_id' => $taskId, 'status' => 'completed']);
+
+        $user = Auth::user();
+        $this->log->log(
+            $user['id'],
+            $user['username'],
+            'complete',
+            'task',
+            $taskId,
+            $task,
+            array_merge($task, ['status' => 'Completed'])
+        );
+
+        Response::json(['success' => true, 'task_id' => $taskId, 'status' => 'Completed']);
     }
 
     #[OA\Get(
@@ -339,47 +398,54 @@ class TaskController extends Controller
         ]
     )]
     public function edit(): void
-{
-    Auth::requireAdmin();
-    
-    $data = $this->getInput();
-    $taskId = (int)($data['task_id'] ?? 0);
-    
-    if (!$taskId) {
-        Response::json(['error' => 'Task ID required'], 400);
-        return;
-    }
-    
-    $task = $this->task->findById($taskId);
-    if (!$task) {
-        Response::json(['error' => 'Task not found'], 404);
-        return;
-    }
-    
-    $updateData = [];
-    $allowedFields = ['task', 'assigned_to', 'employee_responsible', 'status'];
-    
-    foreach ($allowedFields as $field) {
-        if (isset($data[$field])) {
-            $updateData[$field] = $data[$field];
+    {
+        Auth::requireAdmin();
+        
+        $data = $this->getInput();
+        $taskId = (int)($data['task_id'] ?? 0);
+
+        if (!$taskId) {
+            Response::json(['error' => 'Task ID required'], 400);
+            return;
+        }
+
+        $oldTask = $this->task->findById($taskId);
+        if (!$oldTask) {
+            Response::json(['error' => 'Task not found'], 404);
+            return;
+        }
+
+        $updateData = [];
+        $allowedFields = ['task', 'assigned_to', 'employee_responsible', 'status', 'priority', 'due_date'];
+        
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field])) {
+                $updateData[$field] = $data[$field];
+            }
+        }
+
+        if (empty($updateData)) {
+            Response::json(['error' => 'No fields to update'], 400);
+            return;
+        }
+
+        $success = $this->task->update($taskId, $updateData);
+
+        if ($success) {
+            $user = Auth::user();
+            $this->log->log(
+                $user['id'],
+                $user['username'],
+                'update',
+                'task',
+                $taskId,
+                $oldTask,
+                array_merge($oldTask, $updateData)
+            );
+
+            Response::json(['success' => true, 'message' => 'Task updated', 'task_id' => $taskId]);
+        } else {
+            Response::json(['error' => 'Update failed'], 500);
         }
     }
-    
-    if (empty($updateData)) {
-        Response::json(['error' => 'No fields to update'], 400);
-        return;
-    }
-    
-    $success = $this->task->update($taskId, $updateData);
-    
-    if ($success) {
-        Response::json([
-            'success' => true,
-            'message' => 'Task updated',
-            'task_id' => $taskId
-        ]);
-    } else {
-        Response::json(['error' => 'Update failed'], 500);
-    }
-}
 }

@@ -44,6 +44,11 @@ function renderAdminLayout() {
                         User Management
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link${isActive('activity_logs')}" href="#" onclick="navigateTo('activity_logs'); return false;"${isCurrent('activity_logs')}>
+                        Activity Logs
+                    </a>
+                </li>
             </ul>
         </div>
     </nav>
@@ -112,6 +117,9 @@ async function loadPageContent(page) {
             case 'current_tasks':
                 await loadCurrentTasks(container);
                 break;
+            case 'activity_logs':
+                await loadActivityLogs(container);
+                break;
             default:
                 container.innerHTML = '<p>Page not found</p>';
         }
@@ -158,7 +166,17 @@ async function loadProjectOverview(container) {
 }
 
 async function loadTaskManagement(container) {
-    const tasks = await api('/tasks');
+    const [tasks, users] = await Promise.all([
+        api('/tasks'),
+        api('/users')
+    ]);
+
+    // Build options once, reuse in both modals if needed
+    const userOptions = users.map(user => 
+        `<option value="${escapeHtml(user.username)}">${escapeHtml(user.username)} (${escapeHtml(user.role)})</option>`
+    ).join('');
+    
+    const allUserOptions = `<option value="">Unassigned</option>` + userOptions;
 
     container.innerHTML = `
     <section id="task-management">
@@ -195,6 +213,8 @@ async function loadTaskManagement(container) {
                 </div>
             </div>
         </div>
+
+        <!-- Edit Task Modal -->
         <div class="modal fade" id="editTaskModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -218,12 +238,18 @@ async function loadTaskManagement(container) {
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label>Assigned To</label>
+                                <label>Assigned To (Role)</label>
                                 <select name="assigned_to" id="edit-task-assigned" class="form-select">
                                     <option value="admin">Admin</option>
                                     <option value="developers">Developer</option>
                                     <option value="hr">HR</option>
                                     <option value="accounting">Accounting</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label>Employee Responsible</label>
+                                <select name="employee_responsible" id="edit-task-employee" class="form-select">
+                                    ${allUserOptions}
                                 </select>
                             </div>
                             <button type="submit" class="btn btn-success">Update Task</button>
@@ -308,6 +334,7 @@ async function openEditModal(taskId) {
     document.getElementById('edit-task-name').value = task.task || '';
     document.getElementById('edit-task-status').value = task.status || 'Pending';
     document.getElementById('edit-task-assigned').value = task.assigned_to || 'admin';
+    document.getElementById('edit-task-employee').value = task.employee_responsible || '';
     
     const modal = new bootstrap.Modal(document.getElementById('editTaskModal'));
     modal.show();
@@ -493,6 +520,77 @@ async function deleteUser(userId) {
     } catch (error) {
         alert('Error: ' + error.message);
     }
+}
+
+async function loadActivityLogs(container) {
+    const page = parseInt(new URLSearchParams(window.location.search).get('log_page')) || 1;
+    const response = await api(`/logs?page=${page}`);
+    const { logs, page: currentPage, per_page, total, total_pages } = response;
+
+    container.innerHTML = `
+    <section id="activity-logs">
+        <h2>Activity Logs</h2>
+        <p class="text-muted">Total: ${total} entries</p>
+        
+        <table id="logsTable" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Entity</th>
+                    <th>ID</th>
+                    <th>Changes</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${logs.map(log => {
+                    const oldVals = log.old_values ? JSON.parse(log.old_values) : null;
+                    const newVals = log.new_values ? JSON.parse(log.new_values) : null;
+                    
+                    let changesHtml = '';
+                    if (oldVals && newVals) {
+                        const changedFields = Object.keys(newVals).filter(k => oldVals[k] !== newVals[k]);
+                        changesHtml = changedFields.map(field => 
+                            `<div><strong>${field}:</strong> ${escapeHtml(String(oldVals[field] ?? 'null'))} → ${escapeHtml(String(newVals[field]))}</div>`
+                        ).join('');
+                    } else if (newVals) {
+                        changesHtml = '<span class="text-success">Created</span>';
+                    } else if (oldVals) {
+                        changesHtml = '<span class="text-danger">Deleted</span>';
+                    }
+                    
+                    const badgeColor = {
+                        'create': 'success',
+                        'update': 'primary',
+                        'delete': 'danger',
+                        'take': 'info',
+                        'complete': 'warning'
+                    }[log.action] || 'secondary';
+                    
+                    return `
+                    <tr>
+                        <td>${escapeHtml(log.created_at)}</td>
+                        <td>${escapeHtml(log.username)}</td>
+                        <td><span class="badge bg-${badgeColor}">${escapeHtml(log.action)}</span></td>
+                        <td>${escapeHtml(log.entity_type)}</td>
+                        <td>${log.entity_id}</td>
+                        <td>${changesHtml}</td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>
+        
+        <nav>
+            <ul class="pagination">
+                ${currentPage > 1 ? `<li class="page-item"><a class="page-link" href="#" onclick="navigateTo('activity_logs'); window.history.pushState({}, '', '?log_page=${currentPage - 1}'); return false;">Previous</a></li>` : ''}
+                <li class="page-item active"><span class="page-link">Page ${currentPage} of ${total_pages}</span></li>
+                ${currentPage < total_pages ? `<li class="page-item"><a class="page-link" href="#" onclick="navigateTo('activity_logs'); window.history.pushState({}, '', '?log_page=${currentPage + 1}'); return false;">Next</a></li>` : ''}
+            </ul>
+        </nav>
+    </section>`;
+
+    initDataTable('#logsTable');
 }
 
 async function loadTeamTasks(container) {

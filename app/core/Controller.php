@@ -2,6 +2,13 @@
 
 class Controller
 {
+    protected PDO $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getConnection();
+    }
+
     protected function model(string $model)
     {
         $modelFile = __DIR__ . '/../model/' . strtolower($model) . '.php';

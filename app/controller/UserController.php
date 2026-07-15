@@ -6,10 +6,12 @@ use OpenApi\Attributes as OA;
 class UserController extends Controller
 {
     private User $user;
+    private ActivityLog $log;
 
     public function __construct()
     {
         $this->user = $this->model('User');
+        $this->log = $this->model('ActivityLog');
     }
 
     #[OA\Get(
@@ -74,8 +76,22 @@ class UserController extends Controller
         }
 
         $this->user->createUser($username, $password, $role);
+        $newUserId = (int) $this->db->lastInsertId();
+
+        $user = Auth::user();
+        $this->log->log(
+            $user['id'],
+            $user['username'],
+            'create',
+            'user',
+            $newUserId,
+            null,
+            ['username' => $username, 'role' => $role]
+        );
+
         Response::json(['success' => true], 201);
     }
+
 
     #[OA\Delete(
         path: "/users",
@@ -118,8 +134,25 @@ class UserController extends Controller
             return;
         }
 
+        $oldUser = $this->user->getUserById($userId);
+        
         $this->user->deleteUser($userId);
-        Response::json(['success' => true], 200);
+
+        $user = Auth::user();
+        $safeOld = $oldUser ?: [];
+        unset($safeOld['password']);
+
+        $this->log->log(
+            $user['id'],
+            $user['username'],
+            'delete',
+            'user',
+            $userId,
+            $safeOld,
+            null
+        );
+
+        Response::json(['success' => true]);
     }
 
     #[OA\Patch(
@@ -168,31 +201,52 @@ class UserController extends Controller
     {
         $data = $this->getInput();
         $userId = (int)($data['user_id'] ?? 0);
+
+        if (!$userId) {
+            Response::json(['error' => 'User ID required'], 400);
+            return;
+        }
+
+        $oldUser = $this->user->getUserById($userId);
+        if (!$oldUser) {
+            Response::json(['error' => 'User not found'], 404);
+            return;
+        }
+
         $updateData = [];
         $allowedFields = ['username', 'password', 'role'];
-
+        
         foreach ($allowedFields as $field) {
-            if (array_key_exists($field, $data) && $data[$field] !== '') {
+            if (isset($data[$field]) && $data[$field] !== '') {
                 $updateData[$field] = $data[$field];
             }
         }
 
-        if (empty($updateData) && !empty($data['update_data'])) {
-            $updateData = $data['update_data'];
-        }
-
-        if (!$userId || empty($updateData)) {
-            Response::json(['error' => 'User ID and update data required'], 400);
+        if (empty($updateData)) {
+            Response::json(['error' => 'No fields to update'], 400);
             return;
         }
 
         $success = $this->user->updateUser($userId, $updateData);
+
         if ($success) {
-            Response::json([
-                'success' => true,
-                'message' => 'User updated successfully',
-                'updated_user' => $this->user->getUserById($userId)
-                ], 200);
+            $user = Auth::user();
+            $safeOld = $oldUser;
+            unset($safeOld['password']);
+            $safeNew = array_merge($safeOld, $updateData);
+            unset($safeNew['password']);
+
+            $this->log->log(
+                $user['id'],
+                $user['username'],
+                'update',
+                'user',
+                $userId,
+                $safeOld,
+                $safeNew
+            );
+
+            Response::json(['success' => true, 'message' => 'User updated']);
         } else {
             Response::json(['error' => 'Update failed'], 500);
         }

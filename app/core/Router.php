@@ -33,6 +33,19 @@ class Router
     {
         $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         $uri = $_GET['route'] ?? parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/';
+
+        if (is_string($uri)) {
+            $parsedUri = parse_url($uri);
+            if (isset($parsedUri['path'])) {
+                $uri = $parsedUri['path'];
+            }
+            if (isset($parsedUri['query'])) {
+                parse_str($parsedUri['query'], $queryParams);
+                foreach ($queryParams as $key => $value) {
+                    $_GET[$key] = $value;
+                }
+            }
+        }
         
         $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
         if ($scriptDir !== '/' && !empty($scriptDir) && strpos($uri, $scriptDir) === 0) {

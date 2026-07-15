@@ -5,6 +5,13 @@ use OpenApi\Attributes as OA;
 
 class AuthController extends Controller
 {
+    private ActivityLog $log;
+
+    public function __construct()
+    {
+        $this->log = $this->model('ActivityLog');
+    }
+
     #[OA\Post(
         path: "/me",
         summary: "Get current user",
@@ -64,7 +71,6 @@ class AuthController extends Controller
             )
         ]
     )]
-
     public function authenticate(): void
     {
         $data = $this->getInput();
@@ -78,6 +84,16 @@ class AuthController extends Controller
 
         if ($user && $password === $user['password']) {
             Auth::login($user);
+            $this->log->log(
+                $user['id'],
+                $user['username'],
+                'login',
+                'session',
+                $user['id'],
+                null,
+                ['ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown']
+            );
+            
             Response::json([
                 'success' => true,
                 'user' => [
@@ -109,6 +125,17 @@ class AuthController extends Controller
     )]
     public function logout(): void
     {
+        if ($user = Auth::user()) {
+            $this->log->log(
+                $user['id'],
+                $user['username'],
+                'logout',
+                'session',
+                $user['id'],
+                null,
+                ['ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown']
+            );
+        }
         Auth::logout();
         Response::json(['success' => true]);
     }
