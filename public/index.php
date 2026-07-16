@@ -3,6 +3,8 @@
 ini_set('html_errors', 0);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
+ini_set('session.cookie_path', '/');
+ini_set('session.cookie_domain', 'localhost');
 
 require_once __DIR__ . '/../app/Core/Session.php';
 require_once __DIR__ . '/../app/Core/Auth.php';
