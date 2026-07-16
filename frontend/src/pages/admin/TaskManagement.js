@@ -49,7 +49,7 @@ export default function TaskManagement() {
             assigned_to: formData.get('assigned_to'),
             employee_responsible: formData.get('employee_responsible') || null
         };
-        await api('/tasks/edit', {
+        await api('/tasks', {
             method: 'PATCH',
             body: JSON.stringify(data)
         });

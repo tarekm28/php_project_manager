@@ -2,12 +2,7 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
-  "proxy": {
-    "/index.php": {
-      "target": "http://localhost/proj1/public",
-      "changeOrigin": true
-    }
-  },
+  "proxy": "http://localhost/proj1/public",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -16,7 +11,7 @@
     "axios": "^1.18.1",
     "react": "^19.2.7",
     "react-bootstrap": "^2.10.10",
-    "react-data-table-component": "^8.6.2",
+    "react-data-table-component": "^8.6.2", 
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.1",
     "react-scripts": "5.0.1",

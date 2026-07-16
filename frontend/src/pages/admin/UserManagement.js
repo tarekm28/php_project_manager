@@ -22,7 +22,7 @@ export default function UserManagement() {
     }
     async function handleCreate(e){
         e.preventDefault();
-        const formData = newFormData(e.target);
+        const formData = new FormData(e.target);
         await api('/users', {
             method: 'POST',
             body: JSON.stringify({
@@ -36,13 +36,14 @@ export default function UserManagement() {
     }
     async function handleEdit(e) {
         e.preventDefault();
+        const formData = new FormData(e.target);
         const data = {
             user_id: editingUser.id,
             username: formData.get('username'),
             password: formData.get('password'),
             role: formData.get('role')
         };
-        await api(`/users/${editingUser.id}`, {
+        await api(`/users`, {
             method: 'PATCH',
             body: JSON.stringify(data)
         });
@@ -50,7 +51,7 @@ export default function UserManagement() {
         setRefresh(r => r+1);
     }
 
-    function handledDelete(userID){
+    function handleDelete(userID){
         setUserToDelete(userID);
         setShowDelete(true);
     }
@@ -58,7 +59,7 @@ export default function UserManagement() {
     async function confirmDelete() {
         if (!userToDelete) return;
 
-        await api(`/users/${userToDelete}`, {
+        await api(`/users`, {
             method: 'DELETE'
         });
         setShowDelete(false);
@@ -67,7 +68,7 @@ export default function UserManagement() {
 
     function cancelDelete() {
         setShowDelete(false);
-        setUserToDelete(ull);
+        setUserToDelete(null);
     }
 
     function openEdit(user) {
@@ -142,10 +143,54 @@ export default function UserManagement() {
                                     <option value="user">User</option>
                                 </Form.Select>                        
                             </Form.Group>
-                    )}
-                    </Modal.Body>    
+                            <Button type="submit">Update</Button>
+                        </Form>
+                        )}
+                </Modal.Body>
+            </Modal>
+            {/* Delete Confirmation Modal */}
+            <Modal show={showDelete} onHide={cancelDelete} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Delete User</Modal.Title>
+                </Modal.Header>
 
+                <Modal.Body>
+                    Are you sure you want to delete this User?
+                    <br />
+                    <strong>This action cannot be undone.</strong>
+                </Modal.Body>
 
-        </section>
-                )
-    }
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={cancelDelete}>
+                        Cancel
+                    </Button>
+
+                    <Button variant="danger" onClick={confirmDelete}>
+                        Delete
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            <Table striped>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {users.map(user => (
+                        <tr key={user.id}>
+                            <td>{user.username}</td>
+                            <td>{user.role}</td>
+                            <td>
+                                <Button size="sm" variant="warning" onClick={() => openEdit(user)}>Edit</Button>{' '}
+                                <Button size="sm" variant="danger" onClick={() => handleDelete(user.id)}>Delete</Button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </Table>
+    </section>
+);
+}
