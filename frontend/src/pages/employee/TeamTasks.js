@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Table, Badge } from 'react-bootstrap';
+import { Button, Badge } from 'react-bootstrap';
 import api from '../../api/client';
+import DataTable from '../../components/DataTable';
+import PageLoader from '../../components/PageLoader';
+import StatusBadge from '../../components/StatusBadge';
 
 export default function TeamTasks() {
     const [tasks, setTasks] = useState([]);
@@ -12,6 +15,7 @@ export default function TeamTasks() {
     }, [refresh]);
 
     async function loadTasks() {
+        setLoading(true);
         try {
             const data = await api('/tasks/team');
             setTasks(data);
@@ -34,12 +38,12 @@ export default function TeamTasks() {
         }
     }
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return <PageLoader />;
 
     return (
         <section>
-            <h2>Team Overview</h2>
-            <Table striped hover>
+            <h2 className="h4 mb-3">Team Overview</h2>
+            <DataTable id="teamTasksTable" refreshKey={refresh}>
                 <thead>
                     <tr>
                         <th>Task</th>
@@ -53,54 +57,27 @@ export default function TeamTasks() {
                 <tbody>
                     {tasks.map(task => {
                         const isUnassigned = !task.employee_responsible || task.employee_responsible === 'Unassigned';
-                        
                         return (
                             <tr key={task.id}>
-                                <td>{task.task}</td>
+                                <td className="fw-medium">{task.task}</td>
                                 <td>
-                                    {task.employee_responsible ? (
-                                        task.employee_responsible
-                                    ) : (
-                                        <Badge bg="secondary">Unassigned</Badge>
-                                    )}
+                                    {task.employee_responsible ? task.employee_responsible : <Badge bg="secondary">Unassigned</Badge>}
                                 </td>
                                 <td>
                                     {isUnassigned && task.status !== 'Completed' ? (
-                                        <Button 
-                                            size="sm" 
-                                            variant="primary"
-                                            onClick={() => takeTask(task.id)}
-                                        >
-                                            Take Task
-                                        </Button>
+                                        <Button size="sm" variant="primary" onClick={() => takeTask(task.id)}>Take Task</Button>
                                     ) : (
                                         <span className="text-muted">—</span>
                                     )}
                                 </td>
-                                <td>
-                                    <StatusBadge status={task.status} />
-                                </td>
+                                <td><StatusBadge status={task.status} /></td>
                                 <td>{task.created_at}</td>
                                 <td>{task.updated_at}</td>
                             </tr>
                         );
                     })}
                 </tbody>
-            </Table>
+            </DataTable>
         </section>
-    );
-}
-
-function StatusBadge({ status }) {
-    const variants = {
-        'Pending': 'warning',
-        'In Progress': 'info',
-        'Completed': 'success'
-    };
-    
-    return (
-        <Badge bg={variants[status] || 'secondary'}>
-            {status}
-        </Badge>
     );
 }

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Table, Alert } from 'react-bootstrap';
+import { Button, Alert } from 'react-bootstrap';
 import api from '../../api/client';
+import DataTable from '../../components/DataTable';
+import PageLoader from '../../components/PageLoader';
+import StatusBadge from '../../components/StatusBadge';
 
 export default function CurrentTasks() {
     const [tasks, setTasks] = useState([]);
@@ -13,8 +16,8 @@ export default function CurrentTasks() {
     }, []);
 
     async function loadTasks() {
+        setLoading(true);
         try {
-            setLoading(true);
             const data = await api('/tasks/mine');
             setTasks(data);
         } catch (err) {
@@ -27,17 +30,13 @@ export default function CurrentTasks() {
     async function handleComplete(taskId) {
         setCompletingId(taskId);
         setError('');
-
         try {
             await api('/tasks/complete', {
                 method: 'POST',
                 body: JSON.stringify({ task_id: taskId })
             });
-
             setTasks(prev => prev.map(task => 
-                task.id === taskId 
-                    ? { ...task, status: 'Completed' }
-                    : task
+                task.id === taskId ? { ...task, status: 'Completed' } : task
             ));
         } catch (err) {
             setError(err.message);
@@ -46,36 +45,33 @@ export default function CurrentTasks() {
         }
     }
 
-    if (loading) return <div>Loading tasks...</div>;
+    if (loading) return <PageLoader />;
 
     const activeTasks = tasks.filter(t => t.status !== 'Completed');
+    const completedTasks = tasks.filter(t => t.status === 'Completed');
 
     return (
         <section>
-            <h2>My Current Tasks</h2>
+            <h2 className="h4 mb-3">My Current Tasks</h2>
             
-            {error && <Alert variant="danger">{error}</Alert>}
+            {error && <Alert variant="danger" className="py-2">{error}</Alert>}
 
             {activeTasks.length === 0 ? (
-                <p className="text-muted">No active tasks assigned to you.</p>
+                <div className="alert alert-light border text-muted">No active tasks assigned to you.</div>
             ) : (
-                <Table striped>
+                <DataTable id="currentTasksTable" refreshKey={activeTasks.length}>
                     <thead>
                         <tr>
                             <th>Task</th>
                             <th>Status</th>
-                            <th>Action</th>
+                            <th style={{ width: '160px' }}>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {activeTasks.map(task => (
                             <tr key={task.id}>
-                                <td>{task.task}</td>
-                                <td>
-                                    <span className={`badge bg-${getStatusColor(task.status)}`}>
-                                        {task.status}
-                                    </span>
-                                </td>
+                                <td className="fw-medium">{task.task}</td>
+                                <td><StatusBadge status={task.status} /></td>
                                 <td>
                                     <Button
                                         size="sm"
@@ -89,45 +85,34 @@ export default function CurrentTasks() {
                             </tr>
                         ))}
                     </tbody>
-                </Table>
+                </DataTable>
             )}
 
-            {tasks.some(t => t.status === 'Completed') && (
+            {completedTasks.length > 0 && (
                 <>
-                    <h4 className="mt-4 text-muted">Completed</h4>
-                    <Table striped className="opacity-75">
-                        <thead>
-                            <tr>
-                                <th>Task</th>
-                                <th>Status</th>
-                                <th>Completed</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {tasks
-                                .filter(t => t.status === 'Completed')
-                                .map(task => (
+                    <h4 className="mt-4 text-muted h5">Completed Tasks</h4>
+                    <div className="opacity-75">
+                        <DataTable id="completedTasksTable" refreshKey={completedTasks.length}>
+                            <thead>
+                                <tr>
+                                    <th>Task</th>
+                                    <th>Status</th>
+                                    <th>Completed</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {completedTasks.map(task => (
                                     <tr key={task.id}>
-                                        <td>{task.task}</td>
-                                        <td>
-                                            <span className="badge bg-success">Completed</span>
-                                        </td>
+                                        <td className="fw-medium">{task.task}</td>
+                                        <td><StatusBadge status={task.status} /></td>
                                         <td>{task.updated_at}</td>
                                     </tr>
                                 ))}
-                        </tbody>
-                    </Table>
+                            </tbody>
+                        </DataTable>
+                    </div>
                 </>
             )}
         </section>
     );
-}
-
-function getStatusColor(status) {
-    switch (status) {
-        case 'Pending': return 'warning';
-        case 'In Progress': return 'info';
-        case 'Completed': return 'success';
-        default: return 'secondary';
-    }
 }

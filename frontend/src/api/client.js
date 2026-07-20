@@ -4,7 +4,7 @@ async function api(endpoint, options = {}) {
     const url = `${API_BASE}${endpoint}`;
     
     const response = await fetch(url, {
-        credentials: 'include',  // Send cookies for session
+        credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
@@ -13,8 +13,11 @@ async function api(endpoint, options = {}) {
         ...options
     });
     
-    if (response.status === 401) {
-        window.location.href = '/login';
+    // Don't force-redirect for /me — let AuthContext handle 401 gracefully
+    if (response.status === 401 && endpoint !== '/me') {
+        if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+        }
         throw new Error('Unauthorized');
     }
     

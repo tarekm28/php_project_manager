@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Badge, Pagination, Button, Modal } from 'react-bootstrap';
 import api from '../../api/client';
+import PageLoader from '../../components/PageLoader';
 
 export default function ActivityLogs() {
     const [logs, setLogs] = useState([]);
@@ -43,7 +44,6 @@ export default function ActivityLogs() {
         if (oldVals && !newVals) return <span className="text-danger">Deleted</span>;
         if (!oldVals && !newVals) return <span className="text-muted">—</span>;
 
-        // For updates, show changed fields
         const changedFields = Object.keys(newVals).filter(
             key => oldVals[key] !== newVals[key] && key !== 'password'
         );
@@ -74,84 +74,62 @@ export default function ActivityLogs() {
         logout: 'dark'
     };
 
-    const paginationItems = [];
-    for (let i = 1; i <= totalPages; i++) {
-        paginationItems.push(
-            <Pagination.Item 
-                key={i} 
-                active={i === page}
-                onClick={() => setPage(i)}
-            >
-                {i}
-            </Pagination.Item>
-        );
-    }
+    if (loading) return <PageLoader />;
 
     return (
         <section>
-            <h2>Activity Logs</h2>
+            <h2 className="h4 mb-3">Activity Logs</h2>
             <p className="text-muted">Total: {total} entries</p>
 
-            {loading ? (
-                <div className="text-center py-5">
-                    <div className="spinner-border" role="status" />
-                </div>
-            ) : (
-                <>
-                    <Table striped hover responsive>
-                        <thead>
-                            <tr>
-                                <th>Time</th>
-                                <th>User</th>
-                                <th>Action</th>
-                                <th>Entity</th>
-                                <th>ID</th>
-                                <th>Changes</th>
-                                <th>Details</th>
+            <div className="table-responsive">
+                <Table striped hover className="align-middle">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Entity</th>
+                            <th>ID</th>
+                            <th>Changes</th>
+                            <th style={{ width: '80px' }}>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {logs.map(log => (
+                            <tr key={log.id}>
+                                <td className="text-nowrap small">{new Date(log.created_at).toLocaleString()}</td>
+                                <td>{log.username}</td>
+                                <td>
+                                    <Badge bg={actionColors[log.action] || 'secondary'}>
+                                        {log.action}
+                                    </Badge>
+                                </td>
+                                <td>{log.entity_type}</td>
+                                <td>{log.entity_id}</td>
+                                <td>{formatChanges(log)}</td>
+                                <td>
+                                    <Button size="sm" variant="outline-info" onClick={() => viewDetail(log)}>
+                                        View
+                                    </Button>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {logs.map(log => (
-                                <tr key={log.id}>
-                                    <td>{new Date(log.created_at).toLocaleString()}</td>
-                                    <td>{log.username}</td>
-                                    <td>
-                                        <Badge bg={actionColors[log.action] || 'secondary'}>
-                                            {log.action}
-                                        </Badge>
-                                    </td>
-                                    <td>{log.entity_type}</td>
-                                    <td>{log.entity_id}</td>
-                                    <td>{formatChanges(log)}</td>
-                                    <td>
-                                        <Button 
-                                            size="sm" 
-                                            variant="outline-info"
-                                            onClick={() => viewDetail(log)}
-                                        >
-                                            View
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </Table>
+                        ))}
+                    </tbody>
+                </Table>
+            </div>
 
-                    <Pagination>
-                        <Pagination.Prev 
-                            disabled={page === 1} 
-                            onClick={() => setPage(p => p - 1)} 
-                        />
-                        {paginationItems}
-                        <Pagination.Next 
-                            disabled={page === totalPages} 
-                            onClick={() => setPage(p => p + 1)} 
-                        />
-                    </Pagination>
-                </>
-            )}
+            <div className="d-flex justify-content-center">
+                <Pagination>
+                    <Pagination.Prev disabled={page === 1} onClick={() => setPage(p => p - 1)} />
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(i => (
+                        <Pagination.Item key={i} active={i === page} onClick={() => setPage(i)}>
+                            {i}
+                        </Pagination.Item>
+                    ))}
+                    <Pagination.Next disabled={page === totalPages} onClick={() => setPage(p => p + 1)} />
+                </Pagination>
+            </div>
 
-            {/* Detail Modal */}
             <Modal show={showDetail} onHide={() => setShowDetail(false)} size="lg">
                 <Modal.Header closeButton>
                     <Modal.Title>Log Entry #{selectedLog?.id}</Modal.Title>
@@ -162,7 +140,7 @@ export default function ActivityLogs() {
                             <Table bordered size="sm">
                                 <tbody>
                                     <tr>
-                                        <td><strong>Time</strong></td>
+                                        <td style={{ width: '120px' }}><strong>Time</strong></td>
                                         <td>{new Date(selectedLog.created_at).toLocaleString()}</td>
                                     </tr>
                                     <tr>
@@ -184,19 +162,19 @@ export default function ActivityLogs() {
                                 </tbody>
                             </Table>
 
-                            <h5>Changes</h5>
+                            <h5 className="mt-4">Changes</h5>
                             {selectedLog.old_values && (
                                 <>
-                                    <h6 className="text-danger">Before</h6>
-                                    <pre className="bg-light p-2 rounded">
+                                    <h6 className="text-danger small fw-bold mt-3">Before</h6>
+                                    <pre className="bg-light p-2 rounded border small mb-3">
                                         {JSON.stringify(JSON.parse(selectedLog.old_values), null, 2)}
                                     </pre>
                                 </>
                             )}
                             {selectedLog.new_values && (
                                 <>
-                                    <h6 className="text-success">After</h6>
-                                    <pre className="bg-light p-2 rounded">
+                                    <h6 className="text-success small fw-bold mt-3">After</h6>
+                                    <pre className="bg-light p-2 rounded border small mb-3">
                                         {JSON.stringify(JSON.parse(selectedLog.new_values), null, 2)}
                                     </pre>
                                 </>

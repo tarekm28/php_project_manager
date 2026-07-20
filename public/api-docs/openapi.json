@@ -182,33 +182,6 @@
             }
         },
         "/tasks": {
-            "get": {
-                "tags": [
-                    "Tasks"
-                ],
-                "summary": "Get all tasks",
-                "operationId": "8ca2ba029c5cf174d693468bf8c54d5a",
-                "responses": {
-                    "200": {
-                        "description": "List of tasks",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Task"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "sessionAuth": []
-                    }
-                ]
-            },
             "post": {
                 "tags": [
                     "Tasks"

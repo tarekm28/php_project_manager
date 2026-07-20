@@ -251,4 +251,67 @@ class UserController extends Controller
             Response::json(['error' => 'Update failed'], 500);
         }
     }
+
+    public function getUserTasks(): void
+    {
+       Auth::requireAdmin();
+        $username = $_GET['username'] ?? '';
+        if (!$username) {
+            Response::json(['error' => 'Username required'], 400);
+            return;
+        }
+        
+        $taskModel = $this->model('Task');  
+        $tasks = $taskModel->getByEmployee($username);
+
+        $ongoing = array_filter($tasks, fn($t) => ($t['status'] ?? '') !== 'Completed');
+    
+        Response::json([
+            'username' => $username,
+            'ongoing_count' => count($ongoing),
+            'ongoing_tasks' => array_values($ongoing)
+        ]);
+    }   
+
+
+    public function reassignTasks(): void
+    {
+        Auth::requireAdmin();
+        $data = $this->getInput();
+        
+        $username = $data['username'] ?? '';
+        $action = $data['action'] ?? '';
+        $newRole = $data['new_role'] ?? '';
+        
+        if (!$username || !in_array($action, ['change_role', 'unassign'])) {
+            Response::json(['error' => 'Invalid request'], 400);
+            return;
+        }
+        
+        $taskModel = $this->model('Task');
+        $tasks = $taskModel->getByEmployee($username);
+        $ongoing = array_filter($tasks, fn($t) => ($t['status'] ?? '') !== 'Completed');
+        
+        $updated = 0;
+        foreach ($ongoing as $task) {
+            if ($action === 'change_role') {
+                $taskModel->update($task['id'], [
+                    'assigned_to' => $newRole,
+                    'employee_responsible' => $username
+                ]);
+            } else {
+                $taskModel->update($task['id'], [
+                    'employee_responsible' => null,
+                    'status' => 'Pending'
+                ]);
+            }
+            $updated++;
+        }
+        
+        Response::json([
+            'success' => true,
+            'action' => $action,
+            'updated_count' => $updated
+        ]);
+    }
 }

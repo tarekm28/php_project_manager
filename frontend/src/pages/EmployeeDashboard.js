@@ -11,21 +11,39 @@ export default function EmployeeDashboard() {
     const { logout, user } = useAuth();
     const location = useLocation();
 
+    const navLink = (path, label) => (
+        <Nav.Link 
+            as={Link} 
+            to={path}
+            active={location.pathname === path || location.pathname === path + '/'}
+            className="fw-medium"
+        >
+            {label}
+        </Nav.Link>
+    );
+
     return (
-        <>
-            <header className="p-3 bg-light">
-                <h1>Employee Dashboard</h1>
-                <Button variant="outline-secondary" size="sm" onClick={logout} style={{position: 'absolute', top: 16, right: 16}}>
-                    Logout
-                </Button>
+        <div className="page-content">
+            <header className="bg-white border-bottom px-4 py-3 position-relative">
+                <h1 className="h3 mb-0 fw-semibold">Employee Dashboard</h1>
+                <div className="position-absolute top-0 end-0 p-3 d-flex align-items-center gap-3">
+                    <span className="text-muted small d-none d-md-inline">
+                        Signed in as: <strong>{user?.username}</strong>
+                    </span>
+                    <Button variant="outline-secondary" size="sm" onClick={logout}>
+                        Logout
+                    </Button>
+                </div>
             </header>
-            <Navbar bg="light" className="px-3">
+
+            <Navbar bg="body-tertiary" className="px-3 border-bottom">
                 <Nav>
-                    <Nav.Link as={Link} to="/" active={location.pathname === '/'}>Project Overview</Nav.Link>
-                    <Nav.Link as={Link} to="/team" active={location.pathname === '/team'}>Team Tasks</Nav.Link>
-                    <Nav.Link as={Link} to="/mine" active={location.pathname === '/mine'}>Current Tasks</Nav.Link>
+                    {navLink('/', 'Project Overview')}
+                    {navLink('/team', 'Team Tasks')}
+                    {navLink('/mine', 'Current Tasks')}
                 </Nav>
             </Navbar>
+
             <Container className="py-4">
                 <Routes>
                     <Route path="/" element={<ProjectOverview />} />
@@ -33,6 +51,6 @@ export default function EmployeeDashboard() {
                     <Route path="/mine" element={<CurrentTasks />} />
                 </Routes>
             </Container>
-        </>
+        </div>
     );
 }

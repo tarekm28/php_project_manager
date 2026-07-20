@@ -8,6 +8,10 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (window.location.pathname === '/login') {
+            setLoading(false);
+            return;
+        }
         checkAuth();
     }, []);
 
@@ -39,7 +43,13 @@ export function AuthProvider({ children }) {
         }
     }
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) return (
+        <div className="d-flex align-items-center justify-content-center vh-100">
+            <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    );
 
     return (
         <AuthContext.Provider value={{ user, login, logout, isAdmin: user?.role === 'admin' }}>
