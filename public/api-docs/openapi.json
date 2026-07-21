@@ -152,13 +152,13 @@
                 ]
             }
         },
-        "/tasks/all": {
+        "/tasks": {
             "get": {
                 "tags": [
                     "Tasks"
                 ],
                 "summary": "Get all tasks",
-                "operationId": "40b7fe0ed29f4054be573cdc59c400ae",
+                "operationId": "6b29e126218dff3ec3c31e64ae252149",
                 "responses": {
                     "200": {
                         "description": "List of tasks",
@@ -179,9 +179,7 @@
                         "sessionAuth": []
                     }
                 ]
-            }
-        },
-        "/tasks": {
+            },
             "post": {
                 "tags": [
                     "Tasks"
@@ -272,36 +270,38 @@
                 "tags": [
                     "Tasks"
                 ],
-                "summary": "Update a task",
+                "summary": "Edit a task (admin only)",
                 "operationId": "83d3a8edddbcdc82d4a663d90513e49f",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID of the task to update",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "properties": {
+                                    "task_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "task": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "hire new developer->hire new accountant"
                                     },
                                     "assigned_to": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "Developer"
                                     },
                                     "employee_responsible": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "john_doe"
                                     },
                                     "status": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "In Progress"
+                                    },
+                                    "due_date": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2024-12-31T23:59:59Z"
                                     }
                                 },
                                 "type": "object"
@@ -311,19 +311,22 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Task updated successfully",
+                        "description": "Task updated",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
-                                            "type": "boolean"
+                                            "type": "boolean",
+                                            "example": true
                                         },
                                         "message": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "example": "Task updated"
                                         },
                                         "task_id": {
-                                            "type": "integer"
+                                            "type": "integer",
+                                            "example": 1
                                         }
                                     },
                                     "type": "object"
@@ -332,10 +335,68 @@
                         }
                     },
                     "400": {
-                        "description": "Invalid input data"
+                        "description": "Bad request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Task ID required"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden (admin access required)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Forbidden"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "404": {
-                        "description": "Task not found"
+                        "description": "Task not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Task not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Update failed"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [

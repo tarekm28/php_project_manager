@@ -18,11 +18,10 @@ export default function TaskManagement() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
 
-    // Controlled form state for editing
     const [editForm, setEditForm] = useState({
         task: '',
         status: 'Pending',
-        assigned_to: 'admin',
+        assigned_to: 'Admin',
         employee_responsible: ''
     });
 
@@ -38,6 +37,7 @@ export default function TaskManagement() {
                 api('/users')
             ]);
             setTasks(tasksData);
+            console.log(tasksData)
             setUsers(usersData);
         } catch (err) {
             console.error(err);
@@ -101,13 +101,13 @@ export default function TaskManagement() {
     }
 
     function openEdit(task) {
+        console.log('OPENING EDIT FOR TASK:', task);
         setError('');
         setEditingTask(task);
-        // Set controlled form state from the task data
         setEditForm({
             task: task.task || '',
             status: task.status || 'Pending',
-            assigned_to: task.assigned_to || 'admin',
+            assigned_to: task.assigned_to || 'Admin',
             employee_responsible: task.employee_responsible || ''
         });
         setShowEdit(true);
@@ -120,7 +120,7 @@ export default function TaskManagement() {
         setEditForm({
             task: '',
             status: 'Pending',
-            assigned_to: 'admin',
+            assigned_to: 'Admin',
             employee_responsible: ''
         });
     }
@@ -141,7 +141,6 @@ export default function TaskManagement() {
                 <Button onClick={() => setShowAdd(true)}>Add Task</Button>
             </div>
 
-            {/* Add Modal */}
             <Modal show={showAdd} onHide={() => setShowAdd(false)} backdrop="static">
                 <Modal.Header closeButton>
                     <Modal.Title>Add Task</Modal.Title>
@@ -169,7 +168,6 @@ export default function TaskManagement() {
                 </Modal.Body>
             </Modal>
 
-            {/* Edit Modal */}
             <Modal show={showEdit} onHide={closeEdit} backdrop="static">
                 <Modal.Header closeButton>
                     <Modal.Title>Edit Task</Modal.Title>
@@ -211,10 +209,10 @@ export default function TaskManagement() {
                                 value={editForm.assigned_to}
                                 onChange={e => handleFormChange('assigned_to', e.target.value)}
                             >
-                                <option value="admin">Admin</option>
-                                <option value="developers">Developer</option>
-                                <option value="hr">HR</option>
-                                <option value="accounting">Accounting</option>
+                                <option value="Admin">Admin</option>
+                                <option value="Developers">Developer</option>
+                                <option value="HR">HR</option>
+                                <option value="Accounting">Accounting</option>
                             </Form.Select>
                         </Form.Group>
                         <Form.Group className="mb-3">
@@ -222,8 +220,7 @@ export default function TaskManagement() {
                             <Form.Select 
                                 name="employee_responsible" 
                                 value={editForm.employee_responsible}
-                                onChange={e => handleFormChange('employee_responsible', e.target.value)}
-                            >
+                                onChange={e => handleFormChange('employee_responsible', e.target.value)}>
                                 <option value="">Unassigned</option>
                                 {users.map(u => (
                                     <option key={u.id} value={u.username}>
@@ -263,7 +260,7 @@ export default function TaskManagement() {
                     {tasks.map(task => (
                         <tr key={task.id}>
                             <td className="fw-medium">{task.task}</td>
-                            <td>{task.employee_responsible || task.assigned_to || 'Unassigned'}</td>
+                            <td>{task.employee_responsible ? `${task.employee_responsible} - ${task.assigned_to}` : `Unassigned - ${task.assigned_to}`}</td>
                             <td><StatusBadge status={task.status} /></td>
                             <td>{task.created_at}</td>
                             <td>{task.updated_at}</td>

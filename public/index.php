@@ -41,8 +41,6 @@ $router->get('/tasks/mine', 'TaskController@myTasks', [AuthMiddleware::class]);
 $router->get('/tasks/team', 'TaskController@teamTasks', [AuthMiddleware::class]);
 $router->post('/tasks/take', 'TaskController@take', [AuthMiddleware::class]);
 $router->post('/tasks/complete', 'TaskController@complete', [AuthMiddleware::class]);
-$router->get('/logs', 'LogController@index', [AuthMiddleware::class, AdminMiddleware::class]);
-
 
 $router->get('/logs', 'LogController@index', [AuthMiddleware::class, AdminMiddleware::class]);
 $router->get('/logs/task', 'LogController@byTask', [AuthMiddleware::class, AdminMiddleware::class]);

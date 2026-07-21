@@ -10,14 +10,16 @@ export default function UserManagement() {
     const [showAdd, setShowAdd] = useState(false);
     const [showEdit, setShowEdit] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
-    const [editFormData, setEditFormData] = useState(null);
+    const [editForm, setEditForm] = useState({
+        username: '',
+        password: '',
+        role: 'admin'
+    });
     const [refresh, setRefresh] = useState(0);
     const [showDelete, setShowDelete] = useState(false);
     const [userToDelete, setUserToDelete] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-
-    // Cascade prompt state
     const [showCascade, setShowCascade] = useState(false);
     const [cascadeInfo, setCascadeInfo] = useState(null);
     const [cascadeLoading, setCascadeLoading] = useState(false);
@@ -57,25 +59,16 @@ export default function UserManagement() {
         e.preventDefault();
         setError('');
         
-        const formData = new FormData(e.target);
-        const newRole = formData.get('role');
+        const newRole = editForm.role;
         const oldRole = editingUser.role;
         
-        // If role changed, check for ongoing tasks
         if (newRole !== oldRole) {
             try {
                 const info = await api(`/users/tasks?username=${encodeURIComponent(editingUser.username)}`);
                 if (info.ongoing_count > 0) {
-                    // Store form data for later, show cascade prompt
-                    setEditFormData({
-                        user_id: editingUser.id,
-                        username: formData.get('username'),
-                        password: formData.get('password'),
-                        role: newRole
-                    });
                     setCascadeInfo(info);
                     setShowCascade(true);
-                    return; // Don't close modal yet
+                    return;
                 }
             } catch (err) {
                 setError(err.message);
@@ -83,11 +76,10 @@ export default function UserManagement() {
             }
         }
         
-        // No role change or no ongoing tasks — proceed normally
         await doUpdate({
             user_id: editingUser.id,
-            username: formData.get('username'),
-            password: formData.get('password'),
+            username: editForm.username,
+            password: editForm.password,
             role: newRole
         });
     }
@@ -98,10 +90,7 @@ export default function UserManagement() {
                 method: 'PATCH',
                 body: JSON.stringify(data)
             });
-            setShowEdit(false);
-            setEditingUser(null);
-            setEditFormData(null);
-            setError('');
+            closeEdit();
             setRefresh(r => r + 1);
         } catch (err) {
             setError(err.message);
@@ -109,26 +98,28 @@ export default function UserManagement() {
     }
 
     async function handleCascadeAction(action) {
-        if (!cascadeInfo || !editFormData) return;
+        if (!cascadeInfo || !editingUser) return;
         
         setCascadeLoading(true);
         try {
-            // First cascade the tasks
             await api('/users/reassign-tasks', {
                 method: 'POST',
                 body: JSON.stringify({
                     username: cascadeInfo.username,
                     action: action,
-                    new_role: editFormData.role
+                    new_role: editForm.role
                 })
             });
             
-            // Then update the user
-            await doUpdate(editFormData);
+            await doUpdate({
+                user_id: editingUser.id,
+                username: editForm.username,
+                password: editForm.password,
+                role: editForm.role
+            });
             
             setShowCascade(false);
             setCascadeInfo(null);
-            setEditFormData(null);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -155,8 +146,30 @@ export default function UserManagement() {
     function openEdit(user) {
         setEditingUser(user);
         setError('');
-        setEditFormData(null);
+        setEditForm({
+            username: user.username || '',
+            password: user.password || '',
+            role: user.role || 'admin'
+        });
         setShowEdit(true);
+    }
+
+    function closeEdit() {
+        setShowEdit(false);
+        setError('');
+        setEditingUser(null);
+        setEditForm({
+            username: '',
+            password: '',
+            role: 'admin'
+        });
+    }
+
+    function handleFormChange(field, value) {
+        setEditForm(prev => ({
+            ...prev,
+            [field]: value
+        }));
     }
 
     if (loading) return <PageLoader />;
@@ -168,7 +181,6 @@ export default function UserManagement() {
                 <Button onClick={() => setShowAdd(true)}>Add User</Button>
             </div>
 
-            {/* Add Modal */}
             <Modal show={showAdd} onHide={() => setShowAdd(false)} backdrop="static">
                 <Modal.Header closeButton>
                     <Modal.Title>Add User</Modal.Title>
@@ -201,8 +213,7 @@ export default function UserManagement() {
                 </Modal.Body>
             </Modal>
 
-            {/* Edit Modal */}
-            <Modal show={showEdit} onHide={() => { setShowEdit(false); setError(''); }} backdrop="static">
+            <Modal show={showEdit} onHide={closeEdit} backdrop="static">
                 <Modal.Header closeButton>
                     <Modal.Title>Edit User</Modal.Title>
                 </Modal.Header>
@@ -213,45 +224,45 @@ export default function UserManagement() {
                             <div>{error}</div>
                         </Alert>
                     )}
-                    {editingUser && (
-                        <Form onSubmit={handleEdit}>
-                            <input type="hidden" name="user_id" value={editingUser.id} />
-                            <Form.Group className="mb-3">
-                                <Form.Label>Username</Form.Label>
-                                <Form.Control
-                                    name="username"
-                                    defaultValue={editingUser.username}
-                                    required
-                                />
-                            </Form.Group>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Password</Form.Label>
-                                <Form.Control
-                                    name="password"
-                                    defaultValue={editingUser.password}
-                                    required
-                                />
-                            </Form.Group>
-                            <Form.Group className="mb-3">
-                                <Form.Label>Role</Form.Label>
-                                <Form.Select name="role" defaultValue={editingUser.role}>
-                                    <option value="admin">Admin</option>
-                                    <option value="developers">Developer</option>
-                                    <option value="hr">HR</option>
-                                    <option value="accounting">Accounting</option>
-                                    <option value="user">User</option>
-                                </Form.Select>                        
-                            </Form.Group>
-                            <div className="d-flex gap-2 justify-content-end">
-                                <Button variant="secondary" onClick={() => setShowEdit(false)}>Cancel</Button>
-                                <Button type="submit" variant="primary">Update</Button>
-                            </div>
-                        </Form>
-                    )}
+                    <Form onSubmit={handleEdit}>
+                        <input type="hidden" name="user_id" value={editingUser?.id || ''} />
+                        <Form.Group className="mb-3">
+                            <Form.Label>Username</Form.Label>
+                            <Form.Control
+                                value={editForm.username}
+                                onChange={e => handleFormChange('username', e.target.value)}
+                                required
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Password</Form.Label>
+                            <Form.Control
+                                value={editForm.password}
+                                onChange={e => handleFormChange('password', e.target.value)}
+                                required
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Role</Form.Label>
+                            <Form.Select 
+                                value={editForm.role}
+                                onChange={e => handleFormChange('role', e.target.value)}
+                            >
+                                <option value="Admin">Admin</option>
+                                <option value="Developers">Developer</option>
+                                <option value="HR">HR</option>
+                                <option value="Accounting">Accounting</option>
+                                <option value="User">User</option>
+                            </Form.Select>                        
+                        </Form.Group>
+                        <div className="d-flex gap-2 justify-content-end">
+                            <Button variant="secondary" onClick={closeEdit}>Cancel</Button>
+                            <Button type="submit" variant="primary">Update</Button>
+                        </div>
+                    </Form>
                 </Modal.Body>
             </Modal>
 
-            {/* Cascade Prompt Modal */}
             <Modal show={showCascade} onHide={() => { setShowCascade(false); setCascadeInfo(null); }} backdrop="static" centered>
                 <Modal.Header className="bg-warning text-dark">
                     <Modal.Title>⚠️ Role Change Warning</Modal.Title>
@@ -261,7 +272,7 @@ export default function UserManagement() {
                         <strong>{cascadeInfo?.username}</strong> has <strong>{cascadeInfo?.ongoing_count}</strong> ongoing task(s).
                     </p>
                     <p className="text-muted">
-                        Changing their role from <strong>{editingUser?.role}</strong> to <strong>{editFormData?.role}</strong> will leave these tasks mismatched.
+                        Changing their role from <strong>{editingUser?.role}</strong> to <strong>{editForm?.role}</strong> will leave these tasks mismatched.
                     </p>
                     <p className="mb-0">Choose how to handle the ongoing tasks:</p>
                 </Modal.Body>
@@ -272,7 +283,7 @@ export default function UserManagement() {
                         disabled={cascadeLoading}
                         onClick={() => handleCascadeAction('change_role')}
                     >
-                        {cascadeLoading ? 'Processing...' : `📋 Change task roles to "${editFormData?.role}" and keep assigned`}
+                        {cascadeLoading ? 'Processing...' : `📋 Change task roles to "${editForm?.role}" and keep assigned`}
                     </Button>
                     <Button 
                         variant="outline-danger" 

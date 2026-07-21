@@ -105,4 +105,29 @@ class Task extends Model
     {
         return (int)$this->db->lastInsertId();
     }
+
+public function reassignEmployeeTasks(string $username, string $newRole): int
+{
+    $stmt = $this->db->prepare("
+        UPDATE tasks 
+        SET assigned_to = ? 
+        WHERE employee_responsible = ? 
+          AND status != 'Completed'
+    ");
+    $stmt->execute([$newRole, $username]);
+    return $stmt->rowCount();
+}
+
+
+public function unassignEmployeeTasks(string $username): int
+{
+    $stmt = $this->db->prepare("
+        UPDATE tasks 
+        SET employee_responsible = NULL, status = 'Pending'
+        WHERE employee_responsible = ? 
+          AND status != 'Completed'
+    ");
+    $stmt->execute([$username]);
+    return $stmt->rowCount();
+}
 }

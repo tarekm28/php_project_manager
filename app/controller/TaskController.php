@@ -15,7 +15,7 @@ class TaskController extends Controller
     }
 
     #[OA\Get(
-        path: "/tasks/all",
+        path: "/tasks",
         summary: "Get all tasks",
         tags: ["Tasks"],
         security: [["sessionAuth" => []]],
