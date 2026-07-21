@@ -29,7 +29,6 @@ class ActivityLog extends Model
                 $newValues ? json_encode($newValues) : null
             ]);
         } catch (\PDOException $e) {
-            // Ignore logging failures when the activity_logs table is unavailable.
         }
     }
 

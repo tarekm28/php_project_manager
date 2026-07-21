@@ -57,5 +57,16 @@ class User extends Model
         return $stmt->execute($values);
     }
 
+    public function getLastID(): int
+    {
+        return (int)$this->db->lastInsertId();
+    }
 
+    public function findByUsername(string $username): ?array
+    {
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE username = ? LIMIT 1");
+        $stmt->execute([$username]);
+        $result = $stmt->fetch(\PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
 }

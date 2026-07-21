@@ -1,0 +1,49 @@
+/* Login page */
+.login-bg {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-card {
+  border-radius: 1rem;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.login-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Page transitions */
+.page-content {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Navbar polish */
+.navbar {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* Table headers */
+.table thead th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+/* Modal polish */
+.modal-content {
+  border-radius: 0.75rem;
+  border: none;
+}

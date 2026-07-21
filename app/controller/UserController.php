@@ -76,7 +76,7 @@ class UserController extends Controller
         }
 
         $this->user->createUser($username, $password, $role);
-        $newUserId = (int) $this->db->lastInsertId();
+        $newUserId = (int) $this->user->getLastID();
 
         $user = Auth::user();
         $this->log->log(
@@ -101,7 +101,7 @@ class UserController extends Controller
         parameters: [
             new OA\Parameter(
                 name: "user_id",
-                in: "path",
+                in: "query",
                 required: true,
                 description: "ID of the user to delete",
                 schema: new OA\Schema(type: "integer", example: 1)
@@ -156,44 +156,58 @@ class UserController extends Controller
     }
 
     #[OA\Patch(
-        path: "/users",
-        summary: "Update a user",
-        tags: ["Users"],
+        path: "/tasks",
+        summary: "Update a task (admin only)",
+        tags: ["Tasks"],
         security: [["sessionAuth" => []]],
-        parameters: [
-            new OA\Parameter(
-                name: "user_id",
-                in: "path",
-                required: true,
-                description: "ID of the user to update",
-                schema: new OA\Schema(type: "integer", example: 1)
-            )
-        ],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
                 type: "object",
                 properties: [
-                    new OA\Property(property: "username", type: "string", example: "john_doe"),
-                    new OA\Property(property: "password", type: "string", example: "new_secret"),
-                    new OA\Property(property: "role", type: "string", example: "developers")
-                ]
+                    new OA\Property(property: "task_id", type: "integer", example: 1),
+                    new OA\Property(property: "task", type: "string"),
+                    new OA\Property(property: "assigned_to", type: "string"),
+                    new OA\Property(property: "employee_responsible", type: "string"),
+                    new OA\Property(property: "status", type: "string", enum: ["Pending", "In Progress", "Completed"])
+                ],
+                required: ["task_id"]
             )
         ),
         responses: [
             new OA\Response(
                 response: 200,
-                description: "User updated",
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: "success", type: "boolean", example: true)
-                ])
+                description: "Task updated successfully",
+                content: new OA\JsonContent(
+                    type: "object",
+                    properties: [
+                        new OA\Property(property: "success", type: "boolean"),
+                        new OA\Property(property: "message", type: "string"),
+                        new OA\Property(property: "task_id", type: "integer")
+                    ]
+                )
             ),
             new OA\Response(
                 response: 400,
-                description: "Bad request",
-                content: new OA\JsonContent(properties: [
-                    new OA\Property(property: "error", type: "string", example: "User ID and update data required")
-                ])
+                description: "Invalid input or role mismatch",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "error", type: "string")
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 403,
+                description: "Forbidden (admin access required)",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "error", type: "string", example: "Forbidden")
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 404,
+                description: "Task not found"
             )
         ]
     )]
@@ -251,4 +265,127 @@ class UserController extends Controller
             Response::json(['error' => 'Update failed'], 500);
         }
     }
+
+    #[OA\Get(
+        path: "/users/tasks",
+        summary: "Get tasks for a user",
+        tags: ["Users"],
+        security: [["sessionAuth" => []]],
+        parameters: [
+            new OA\Parameter(
+                name: "username",
+                in: "query",
+                required: true,
+                description: "Username of the user",
+                schema: new OA\Schema(type: "string", example: "john_doe")
+            )
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "List of tasks for the user",
+                content: new OA\JsonContent(type: "object", properties: [
+                    new OA\Property(property: "username", type: "string", example: "john_doe"),
+                    new OA\Property(property: "ongoing_count", type: "integer", example: 5),
+                    new OA\Property(property: "ongoing_tasks", type: "array", items: new OA\Items(ref: "#/components/schemas/Task"))
+                ])
+            ),
+            new OA\Response(
+                response: 400,
+                description: "Bad request",
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: "error", type: "string", example: "Username required")
+                ])
+            )
+        ]
+    )]
+    public function getUserTasks(): void
+    {
+       Auth::requireAdmin();
+        $username = $_GET['username'] ?? '';
+        if (!$username) {
+            Response::json(['error' => 'Username required'], 400);
+            return;
+        }
+        
+        $taskModel = $this->model('Task');  
+        $tasks = $taskModel->getByEmployee($username);
+
+        $ongoing = array_filter($tasks, fn($t) => ($t['status'] ?? '') !== 'Completed');
+    
+        Response::json([
+            'username' => $username,
+            'ongoing_count' => count($ongoing),
+            'ongoing_tasks' => array_values($ongoing)
+        ]);
+    }   
+
+
+   #[OA\Post(
+        path: "/users/reassign-tasks",
+        summary: "Reassign or unassign ongoing tasks when changing a user's role (admin only)",
+        tags: ["Users"],
+        security: [["sessionAuth" => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: "object",
+                properties: [
+                    new OA\Property(property: "username", type: "string", example: "john_doe"),
+                    new OA\Property(property: "action", type: "string", enum: ["change_role", "unassign"]),
+                    new OA\Property(property: "new_role", type: "string", example: "HR")
+                ],
+                required: ["username", "action"]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: "Tasks reassigned successfully",
+                content: new OA\JsonContent(
+                    type: "object",
+                    properties: [
+                        new OA\Property(property: "success", type: "boolean", example: true),
+                        new OA\Property(property: "action", type: "string", example: "change_role"),
+                        new OA\Property(property: "updated_count", type: "integer", example: 3),
+                        new OA\Property(property: "updated_ids", type: "array", items: new OA\Items(type: "integer"))
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 400,
+                description: "Invalid request",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "error", type: "string", example: "Invalid request")
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 403,
+                description: "Forbidden (admin access required)",
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: "error", type: "string", example: "Forbidden")
+                    ]
+                )
+            )
+        ]
+    )]
+    public function reassignTasks(): void
+    {
+    Auth::requireAdmin();
+    $data = $this->getInput();
+    
+    $username = $data['username'] ?? '';
+    $action   = $data['action']   ?? ''; 
+    $newRole  = $data['new_role'] ?? '';
+    
+    if (!$username || !in_array($action, ['change_role', 'unassign'])) {
+        Response::json(['error' => 'Invalid request'], 400);
+        return;
+    }
+}
+
+    
 }

@@ -129,7 +129,7 @@ async function loadPageContent(page) {
 }
 
 async function loadProjectOverview(container) {
-    const tasks = await api('/tasks/all');
+    const tasks = await api('/tasks');
 
     container.innerHTML = `
     <section id="project-overview">
@@ -171,7 +171,6 @@ async function loadTaskManagement(container) {
         api('/users')
     ]);
 
-    // Build options once, reuse in both modals if needed
     const userOptions = users.map(user => 
         `<option value="${escapeHtml(user.username)}">${escapeHtml(user.username)} (${escapeHtml(user.role)})</option>`
     ).join('');

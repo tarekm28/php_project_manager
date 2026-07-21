@@ -2,12 +2,6 @@
 
 class Controller
 {
-    protected PDO $db;
-
-    public function __construct()
-    {
-        $this->db = Database::getConnection();
-    }
 
     protected function model(string $model)
     {

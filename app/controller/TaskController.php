@@ -15,7 +15,7 @@ class TaskController extends Controller
     }
 
     #[OA\Get(
-        path: "/tasks/all",
+        path: "/tasks",
         summary: "Get all tasks",
         tags: ["Tasks"],
         security: [["sessionAuth" => []]],
@@ -84,7 +84,7 @@ class TaskController extends Controller
         }
 
         $this->task->create($task, $role);
-        $newTaskId = (int) $this->db->lastInsertId();
+        $newTaskId = (int) $this->task->getLastID();
 
         $user = Auth::user();
         $this->log->log(
@@ -332,120 +332,140 @@ class TaskController extends Controller
         Response::json($tasks);
     }
 
-    #[OA\Get(
-        path: "/tasks",
-        summary: "Get all tasks",
-        tags: ["Tasks"],
-        security: [["sessionAuth" => []]],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: "List of tasks",
-                content: new OA\JsonContent(type: "array", items: new OA\Items(ref: "#/components/schemas/Task"))
-            )
-        ]
-    )]
-    public function allTasks(): void
-    {
-        $tasks = $this->task->getAll();
-        Response::json($tasks);
-    }
-
     #[OA\Patch(
         path: "/tasks",
-        summary: "Update a task",
+        summary: "Edit a task (admin only)",
         tags: ["Tasks"],
         security: [["sessionAuth" => []]],
-        parameters: [
-            new OA\Parameter(
-                name: "id",
-                in: "path",
-                description: "ID of the task to update",
-                required: true,
-                schema: new OA\Schema(type: "integer")
-            )
-        ],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent(
-                type: "object",
-                properties: [
-                    new OA\Property(property: "task", type: "string"),
-                    new OA\Property(property: "assigned_to", type: "string"),
-                    new OA\Property(property: "employee_responsible", type: "string"),
-                    new OA\Property(property: "status", type: "string")
-                ]
-            )
+            content: new OA\JsonContent(properties: [
+                new OA\Property(property: "task_id", type: "integer", example: 1),
+                new OA\Property(property: "task", type: "string", example: "hire new developer->hire new accountant"),
+                new OA\Property(property: "assigned_to", type: "string", example: "Developer"),
+                new OA\Property(property: "employee_responsible", type: "string", example: "john_doe"),
+                new OA\Property(property: "status", type: "string", example: "In Progress"),
+                new OA\Property(property: "due_date", type: "string", format: "date-time", example: "2024-12-31T23:59:59Z")
+            ])
         ),
         responses: [
             new OA\Response(
                 response: 200,
-                description: "Task updated successfully",
-                content: new OA\JsonContent(type:"object", properties:[
-                    new OA\Property(property:"success", type:"boolean"),
-                    new OA\Property(property:"message", type:"string"),
-                    new OA\Property(property:"task_id", type:"integer")
+                description: "Task updated",
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: "success", type: "boolean", example: true),
+                    new OA\Property(property: "message", type: "string", example: "Task updated"),
+                    new OA\Property(property: "task_id", type: "integer", example: 1)
                 ])
             ),
             new OA\Response(
                 response: 400,
-                description: "Invalid input data"
+                description: "Bad request",
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: "error", type: "string", example: "Task ID required")
+                ])
+            ),
+            new OA\Response(
+                response: 403,
+                description: "Forbidden (admin access required)",
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: "error", type: "string", example: "Forbidden")
+                ])
             ),
             new OA\Response(
                 response: 404,
-                description: "Task not found"
+                description: "Task not found",
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: "error", type: "string", example: "Task not found")
+                ])
+            ),
+            new OA\Response(
+                response: 500,
+                description: "Internal server error",
+                content: new OA\JsonContent(properties: [
+                    new OA\Property(property: "error", type: "string", example: "Update failed")
+                ])
             )
         ]
     )]
     public function edit(): void
-    {
-        Auth::requireAdmin();
-        
-        $data = $this->getInput();
-        $taskId = (int)($data['task_id'] ?? 0);
+{
+    Auth::requireAdmin();
+    
+    $data = $this->getInput();
+    $taskId = (int)($data['task_id'] ?? 0);
 
-        if (!$taskId) {
-            Response::json(['error' => 'Task ID required'], 400);
-            return;
-        }
+    if (!$taskId) {
+        Response::json(['error' => 'Task ID required'], 400);
+        return;
+    }
 
-        $oldTask = $this->task->findById($taskId);
-        if (!$oldTask) {
-            Response::json(['error' => 'Task not found'], 404);
-            return;
-        }
+    $oldTask = $this->task->findById($taskId);
+    if (!$oldTask) {
+        Response::json(['error' => 'Task not found'], 404);
+        return;
+    }
 
-        $updateData = [];
-        $allowedFields = ['task', 'assigned_to', 'employee_responsible', 'status', 'priority', 'due_date'];
-        
-        foreach ($allowedFields as $field) {
-            if (isset($data[$field])) {
-                $updateData[$field] = $data[$field];
-            }
-        }
-
-        if (empty($updateData)) {
-            Response::json(['error' => 'No fields to update'], 400);
-            return;
-        }
-
-        $success = $this->task->update($taskId, $updateData);
-
-        if ($success) {
-            $user = Auth::user();
-            $this->log->log(
-                $user['id'],
-                $user['username'],
-                'update',
-                'task',
-                $taskId,
-                $oldTask,
-                array_merge($oldTask, $updateData)
-            );
-
-            Response::json(['success' => true, 'message' => 'Task updated', 'task_id' => $taskId]);
-        } else {
-            Response::json(['error' => 'Update failed'], 500);
+    $updateData = [];
+    $allowedFields = ['task', 'assigned_to', 'employee_responsible', 'status', 'priority', 'due_date'];
+    
+    foreach ($allowedFields as $field) {
+        if (isset($data[$field])) {
+            $updateData[$field] = $data[$field];
         }
     }
+
+    if (empty($updateData)) {
+        Response::json(['error' => 'No fields to update'], 400);
+        return;
+    }
+    $newEmployee = $updateData['employee_responsible'] ?? null;
+    
+    $taskRole = $updateData['assigned_to'] ?? $oldTask['assigned_to'] ?? null;
+
+    if ($newEmployee !== null && $newEmployee !== '' && $newEmployee !== 'Unassigned') {
+        $userModel = $this->model('User');
+        $user = $userModel->findByUsername($newEmployee);
+        
+        if (!$user) {
+            Response::json(['error' => "User '{$newEmployee}' does not exist"], 400);
+            return;
+        }
+
+        $userRole = $user['role'] ?? '';
+        
+        if ($userRole !== $taskRole) {
+            Response::json([
+                'error' => sprintf(
+                    "Role mismatch: '%s' is a %s, but this task is assigned to %s. Change the task role to %s or select a %s user.",
+                    $newEmployee,
+                    $userRole,
+                    $taskRole,
+                    $userRole,
+                    $taskRole
+                )
+            ], 400);
+            return;
+        }
+    }
+
+    $success = $this->task->update($taskId, $updateData);
+
+    if ($success) {
+        $user = Auth::user();
+        $this->log->log(
+            $user['id'],
+            $user['username'],
+            'update',
+            'task',
+            $taskId,
+            $oldTask,
+            array_merge($oldTask, $updateData)
+        );
+
+        Response::json(['success' => true, 'message' => 'Task updated', 'task_id' => $taskId]);
+    } else {
+        Response::json(['error' => 'Update failed'], 500);
+    }
+}
 }
